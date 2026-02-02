@@ -3,7 +3,7 @@ from esphome.components import ecoworthy_modbus
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
 
-AUTO_LOAD = ["ecoworthy_modbus", "binary_sensor", "sensor", "text_sensor"]
+AUTO_LOAD = ["ecoworthy_modbus", "binary_sensor", "sensor", "text_sensor", "switch", "button"]
 CODEOWNERS = ["@rar"]
 MULTI_CONF = True
 

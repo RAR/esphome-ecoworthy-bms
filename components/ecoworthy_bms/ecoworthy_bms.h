@@ -4,10 +4,48 @@
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
+#include "esphome/components/switch/switch.h"
+#include "esphome/components/button/button.h"
 #include "esphome/components/ecoworthy_modbus/ecoworthy_modbus.h"
 
 namespace esphome {
 namespace ecoworthy_bms {
+
+class EcoworthyBms;
+
+// Switch classes for MOS control
+class ChargeMosSwitch : public switch_::Switch, public Component {
+ public:
+  void set_parent(EcoworthyBms *parent) { this->parent_ = parent; }
+  void write_state(bool state) override;
+ protected:
+  EcoworthyBms *parent_;
+};
+
+class DischargeMosSwitch : public switch_::Switch, public Component {
+ public:
+  void set_parent(EcoworthyBms *parent) { this->parent_ = parent; }
+  void write_state(bool state) override;
+ protected:
+  EcoworthyBms *parent_;
+};
+
+// Button classes for actions
+class StandbySleepButton : public button::Button, public Component {
+ public:
+  void set_parent(EcoworthyBms *parent) { this->parent_ = parent; }
+  void press_action() override;
+ protected:
+  EcoworthyBms *parent_;
+};
+
+class DeepSleepButton : public button::Button, public Component {
+ public:
+  void set_parent(EcoworthyBms *parent) { this->parent_ = parent; }
+  void press_action() override;
+ protected:
+  EcoworthyBms *parent_;
+};
 
 class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::EcoworthyModbusDevice {
  public:
@@ -87,18 +125,62 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_mosfet_status_bitmask_sensor(sensor::Sensor *mosfet_bitmask) { mosfet_status_bitmask_sensor_ = mosfet_bitmask; }
   void set_balancing_bitmask_sensor(sensor::Sensor *balancing_bitmask) { balancing_bitmask_sensor_ = balancing_bitmask; }
 
+  // Configuration sensors (from 0x1C00 and 0x2000 blocks)
+  void set_balance_voltage_sensor(sensor::Sensor *s) { balance_voltage_sensor_ = s; }
+  void set_balance_difference_sensor(sensor::Sensor *s) { balance_difference_sensor_ = s; }
+  void set_heater_start_temp_sensor(sensor::Sensor *s) { heater_start_temp_sensor_ = s; }
+  void set_heater_stop_temp_sensor(sensor::Sensor *s) { heater_stop_temp_sensor_ = s; }
+  void set_full_charge_voltage_sensor(sensor::Sensor *s) { full_charge_voltage_sensor_ = s; }
+  void set_full_charge_current_sensor(sensor::Sensor *s) { full_charge_current_sensor_ = s; }
+  void set_sleep_voltage_sensor(sensor::Sensor *s) { sleep_voltage_sensor_ = s; }
+  void set_sleep_delay_sensor(sensor::Sensor *s) { sleep_delay_sensor_ = s; }
+  void set_total_charge_sensor(sensor::Sensor *s) { total_charge_sensor_ = s; }
+  void set_total_discharge_sensor(sensor::Sensor *s) { total_discharge_sensor_ = s; }
+  void set_configured_cvl_sensor(sensor::Sensor *s) { configured_cvl_sensor_ = s; }
+  void set_configured_ccl_sensor(sensor::Sensor *s) { configured_ccl_sensor_ = s; }
+  void set_configured_dvl_sensor(sensor::Sensor *s) { configured_dvl_sensor_ = s; }
+  void set_configured_dcl_sensor(sensor::Sensor *s) { configured_dcl_sensor_ = s; }
+  void set_shunt_resistance_sensor(sensor::Sensor *s) { shunt_resistance_sensor_ = s; }
+
+  // Product info sensors (from 0x2810 block)
+  void set_hardware_version_sensor(sensor::Sensor *s) { hardware_version_sensor_ = s; }
+
   // Text sensors
   void set_operation_status_text_sensor(text_sensor::TextSensor *operation_status) { operation_status_text_sensor_ = operation_status; }
   void set_fault_text_sensor(text_sensor::TextSensor *fault) { fault_text_sensor_ = fault; }
   void set_alarm_text_sensor(text_sensor::TextSensor *alarm) { alarm_text_sensor_ = alarm; }
   void set_serial_number_text_sensor(text_sensor::TextSensor *serial) { serial_number_text_sensor_ = serial; }
   void set_firmware_version_text_sensor(text_sensor::TextSensor *firmware) { firmware_text_sensor_ = firmware; }
+  void set_bms_serial_number_text_sensor(text_sensor::TextSensor *s) { bms_serial_number_text_sensor_ = s; }
+  void set_pack_serial_number_text_sensor(text_sensor::TextSensor *s) { pack_serial_number_text_sensor_ = s; }
+  void set_manufacturer_text_sensor(text_sensor::TextSensor *s) { manufacturer_text_sensor_ = s; }
+  void set_bms_model_text_sensor(text_sensor::TextSensor *s) { bms_model_text_sensor_ = s; }
+  void set_balance_mode_text_sensor(text_sensor::TextSensor *s) { balance_mode_text_sensor_ = s; }
+  void set_can_protocol_text_sensor(text_sensor::TextSensor *s) { can_protocol_text_sensor_ = s; }
+  void set_rs485_protocol_text_sensor(text_sensor::TextSensor *s) { rs485_protocol_text_sensor_ = s; }
+
+  // Switches for MOS control
+  void set_charge_mos_switch(ChargeMosSwitch *s) { charge_mos_switch_ = s; }
+  void set_discharge_mos_switch(DischargeMosSwitch *s) { discharge_mos_switch_ = s; }
+
+  // Buttons for sleep modes
+  void set_standby_sleep_button(StandbySleepButton *b) { standby_sleep_button_ = b; }
+  void set_deep_sleep_button(DeepSleepButton *b) { deep_sleep_button_ = b; }
 
   void on_modbus_data(const std::vector<uint8_t> &data) override;
 
   void dump_config() override;
   void update() override;
   float get_setup_priority() const override;
+
+  // MOS control methods (called by switches)
+  void set_charge_mos(bool state);
+  void set_discharge_mos(bool state);
+  void set_sleep_mode(uint8_t mode);  // 0xA501 = standby, 0xA502 = deep
+
+  // Current MOS state (for switches)
+  bool get_charge_mos_state() const { return charge_mos_state_; }
+  bool get_discharge_mos_state() const { return discharge_mos_state_; }
 
  protected:
   // Binary sensors
@@ -155,12 +237,45 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *mosfet_status_bitmask_sensor_{nullptr};
   sensor::Sensor *balancing_bitmask_sensor_{nullptr};
 
+  // Configuration sensors
+  sensor::Sensor *balance_voltage_sensor_{nullptr};
+  sensor::Sensor *balance_difference_sensor_{nullptr};
+  sensor::Sensor *heater_start_temp_sensor_{nullptr};
+  sensor::Sensor *heater_stop_temp_sensor_{nullptr};
+  sensor::Sensor *full_charge_voltage_sensor_{nullptr};
+  sensor::Sensor *full_charge_current_sensor_{nullptr};
+  sensor::Sensor *sleep_voltage_sensor_{nullptr};
+  sensor::Sensor *sleep_delay_sensor_{nullptr};
+  sensor::Sensor *total_charge_sensor_{nullptr};
+  sensor::Sensor *total_discharge_sensor_{nullptr};
+  sensor::Sensor *configured_cvl_sensor_{nullptr};
+  sensor::Sensor *configured_ccl_sensor_{nullptr};
+  sensor::Sensor *configured_dvl_sensor_{nullptr};
+  sensor::Sensor *configured_dcl_sensor_{nullptr};
+  sensor::Sensor *shunt_resistance_sensor_{nullptr};
+  sensor::Sensor *hardware_version_sensor_{nullptr};
+
   // Text sensors
   text_sensor::TextSensor *operation_status_text_sensor_{nullptr};
   text_sensor::TextSensor *fault_text_sensor_{nullptr};
   text_sensor::TextSensor *alarm_text_sensor_{nullptr};
   text_sensor::TextSensor *serial_number_text_sensor_{nullptr};
   text_sensor::TextSensor *firmware_text_sensor_{nullptr};
+  text_sensor::TextSensor *bms_serial_number_text_sensor_{nullptr};
+  text_sensor::TextSensor *pack_serial_number_text_sensor_{nullptr};
+  text_sensor::TextSensor *manufacturer_text_sensor_{nullptr};
+  text_sensor::TextSensor *bms_model_text_sensor_{nullptr};
+  text_sensor::TextSensor *balance_mode_text_sensor_{nullptr};
+  text_sensor::TextSensor *can_protocol_text_sensor_{nullptr};
+  text_sensor::TextSensor *rs485_protocol_text_sensor_{nullptr};
+
+  // Switches
+  ChargeMosSwitch *charge_mos_switch_{nullptr};
+  DischargeMosSwitch *discharge_mos_switch_{nullptr};
+
+  // Buttons
+  StandbySleepButton *standby_sleep_button_{nullptr};
+  DeepSleepButton *deep_sleep_button_{nullptr};
 
   struct Cell {
     sensor::Sensor *cell_voltage_sensor_{nullptr};
@@ -172,12 +287,20 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
 
   uint8_t no_response_count_{0};
   uint32_t update_counter_{0};
+  uint8_t request_step_{0};
+
+  // Current MOS states
+  bool charge_mos_state_{false};
+  bool discharge_mos_state_{false};
 
   void publish_state_(binary_sensor::BinarySensor *binary_sensor, const bool &state);
   void publish_state_(sensor::Sensor *sensor, float value);
   void publish_state_(text_sensor::TextSensor *text_sensor, const std::string &state);
   
   void on_pack_status_data_(const std::vector<uint8_t> &data);
+  void on_config_1c00_data_(const std::vector<uint8_t> &data);
+  void on_config_2000_data_(const std::vector<uint8_t> &data);
+  void on_product_info_data_(const std::vector<uint8_t> &data);
   
   void reset_online_status_tracker_();
   void track_online_status_();
@@ -186,6 +309,9 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   std::string decode_operation_status_(uint16_t status);
   std::string decode_fault_(uint32_t fault);
   std::string decode_alarm_(uint32_t alarm);
+  std::string decode_balance_mode_(uint16_t mode);
+  std::string decode_can_protocol_(uint16_t protocol);
+  std::string decode_rs485_protocol_(uint16_t protocol);
 };
 
 }  // namespace ecoworthy_bms

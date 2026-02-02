@@ -20,6 +20,9 @@ This is a native C++ implementation that communicates directly with the Ecoworth
 - **Temperature sensors** - MOSFET, ambient, and up to 4 cell temperature sensors
 - **Status reporting** - Real-time status, faults, alarms, and balancing status
 - **Charge/Discharge limits** - Dynamic CVL, CCL, DVL, DCL values
+- **MOS control** - Enable/disable charge and discharge MOSFETs via switches
+- **Sleep mode control** - Put BMS into standby or deep sleep via buttons
+- **Configuration readout** - Read BMS configuration parameters
 - **Multi-BMS support** - Connect multiple BMSes on the same RS485 bus
 - **Low resource usage** - Efficient C++ implementation
 - **Home Assistant integration** - Automatic device discovery and configuration
@@ -185,6 +188,52 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 | `alarm` | Active alarm conditions |
 | `serial_number` | Battery serial number |
 | `firmware_version` | BMS firmware version |
+| `bms_serial_number` | BMS board serial number |
+| `pack_serial_number` | Battery pack serial number |
+| `manufacturer` | Manufacturer name |
+| `bms_model` | BMS model identifier |
+| `balance_mode` | Balance mode (Voltage/SOC) |
+| `can_protocol` | Configured CAN protocol |
+| `rs485_protocol` | Configured RS485 protocol |
+
+### Configuration Sensors
+
+| Sensor | Unit | Description |
+|--------|------|-------------|
+| `balance_voltage` | V | Balance start voltage threshold |
+| `balance_difference` | V | Balance difference threshold |
+| `heater_start_temp` | °C | Heater activation temperature |
+| `heater_stop_temp` | °C | Heater deactivation temperature |
+| `full_charge_voltage` | V | Full charge voltage threshold |
+| `full_charge_current` | A | Full charge current threshold |
+| `sleep_voltage` | V | Sleep mode voltage threshold |
+| `sleep_delay` | min | Sleep mode delay |
+| `total_charge` | Ah | Total charge accumulated |
+| `total_discharge` | Ah | Total discharge accumulated |
+| `configured_cvl` | V | Configured charge voltage limit |
+| `configured_ccl` | A | Configured charge current limit |
+| `configured_dvl` | V | Configured discharge voltage limit |
+| `configured_dcl` | A | Configured discharge current limit |
+| `shunt_resistance` | μΩ | Current shunt resistance |
+| `hardware_version` | - | Hardware version |
+
+### Switches (MOS Control)
+
+| Switch | Description |
+|--------|-------------|
+| `charge_mos` | Enable/disable charge MOSFET |
+| `discharge_mos` | Enable/disable discharge MOSFET |
+
+> ⚠️ **Warning:** Disabling MOSFETs will disconnect the battery from the load/charger. Use with caution!
+
+### Buttons (Sleep Control)
+
+| Button | Description |
+|--------|-------------|
+| `standby_sleep` | Put BMS into standby sleep mode |
+| `deep_sleep` | Put BMS into deep sleep mode |
+
+> ⚠️ **Warning:** Deep sleep mode requires physical button press or charger connection to wake the BMS!
 
 ## Protocol Information
 
@@ -195,8 +244,19 @@ This component uses the JBD/Ecoworthy Modbus-RTU protocol:
 - **Stop Bits**: 1
 - **Parity**: None
 - **Function Code 0x78**: Read registers
-- **Function Code 0x79**: Write registers
+- **Function Code 0x79**: Write registers (with 0x114A4244 prefix)
 - **CRC**: CRC16 with polynomial 0xA001, initial value 0xFFFF, LSB first
+
+### Register Blocks
+
+| Block | Address Range | Description |
+|-------|---------------|-------------|
+| Pack Status | 0x1000 - 0x10A0 | Real-time battery status |
+| Config Block 1 | 0x1C00 - 0x1CA0 | Configuration parameters |
+| Config Block 2 | 0x2000 - 0x2050 | Additional configuration |
+| Product Info | 0x2810 - 0x283C | Product information |
+| MOS Control | 0x2902 | Enable/disable MOSFETs |
+| Sleep Mode | 0x2908 | Sleep mode control |
 
 ### Pack Status Registers (0x1000 - 0x10A0)
 

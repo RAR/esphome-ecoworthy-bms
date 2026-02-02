@@ -85,12 +85,37 @@ void EcoworthyModbus::send(uint8_t address, uint8_t function, uint16_t start_add
   request.function = function;
   request.start_address = start_address;
   request.end_address = end_address;
-  request.data_length = 0;  // For read requests, data length is 0
+  request.is_write = false;
   
   this->request_queue_.push(request);
   
-  ESP_LOGV(TAG, "Queued request for address 0x%02X, start=0x%04X, end=0x%04X, queue size: %d", 
+  ESP_LOGV(TAG, "Queued read request for address 0x%02X, start=0x%04X, end=0x%04X, queue size: %d", 
            address, start_address, end_address, this->request_queue_.size());
+}
+
+void EcoworthyModbus::send_write(uint8_t address, uint16_t start_address, uint16_t end_address, const std::vector<uint8_t> &data) {
+  // Add write request to queue
+  ModbusRequest request;
+  request.address = address;
+  request.function = FUNCTION_WRITE;
+  request.start_address = start_address;
+  request.end_address = end_address;
+  request.is_write = true;
+  
+  // Write commands include 0x114A4244 prefix ("JBD" with 0x11 prefix)
+  request.data.push_back(0x11);
+  request.data.push_back(0x4A);  // 'J'
+  request.data.push_back(0x42);  // 'B'
+  request.data.push_back(0x44);  // 'D'
+  // Append actual data
+  for (uint8_t b : data) {
+    request.data.push_back(b);
+  }
+  
+  this->request_queue_.push(request);
+  
+  ESP_LOGV(TAG, "Queued write request for address 0x%02X, start=0x%04X, end=0x%04X, data_len=%d, queue size: %d", 
+           address, start_address, end_address, request.data.size(), this->request_queue_.size());
 }
 
 void EcoworthyModbus::send_next_request_() {
@@ -101,33 +126,71 @@ void EcoworthyModbus::send_next_request_() {
   ModbusRequest request = this->request_queue_.front();
   this->request_queue_.pop();
 
-  // Ecoworthy frame format: addr(1) + func(1) + start_addr(2) + end_addr(2) + data_len(2) + crc(2)
-  uint8_t frame[10];
-  frame[0] = request.address;
-  frame[1] = request.function;
-  frame[2] = request.start_address >> 8;
-  frame[3] = request.start_address & 0xFF;
-  frame[4] = request.end_address >> 8;
-  frame[5] = request.end_address & 0xFF;
-  frame[6] = request.data_length >> 8;
-  frame[7] = request.data_length & 0xFF;
+  if (request.is_write) {
+    // Write frame format: addr(1) + func(1) + start_addr(2) + end_addr(2) + data_len(2) + data(n) + crc(2)
+    size_t frame_size = 8 + request.data.size() + 2;
+    std::vector<uint8_t> frame(frame_size);
+    
+    frame[0] = request.address;
+    frame[1] = request.function;
+    frame[2] = request.start_address >> 8;
+    frame[3] = request.start_address & 0xFF;
+    frame[4] = request.end_address >> 8;
+    frame[5] = request.end_address & 0xFF;
+    frame[6] = (request.data.size() >> 8) & 0xFF;
+    frame[7] = request.data.size() & 0xFF;
+    
+    // Copy data
+    for (size_t i = 0; i < request.data.size(); i++) {
+      frame[8 + i] = request.data[i];
+    }
+    
+    uint16_t crc = crc16_ecoworthy(frame.data(), frame_size - 2);
+    frame[frame_size - 2] = crc & 0xFF;        // LSB first
+    frame[frame_size - 1] = (crc >> 8) & 0xFF;
 
-  uint16_t crc = crc16_ecoworthy(frame, 8);
-  frame[8] = crc & 0xFF;        // LSB first
-  frame[9] = (crc >> 8) & 0xFF;
+    if (this->flow_control_pin_ != nullptr) {
+      this->flow_control_pin_->digital_write(true);
+    }
 
-  if (this->flow_control_pin_ != nullptr) {
-    this->flow_control_pin_->digital_write(true);
+    this->write_array(frame.data(), frame_size);
+    this->flush();
+
+    if (this->flow_control_pin_ != nullptr) {
+      this->flow_control_pin_->digital_write(false);
+    }
+
+    ESP_LOGD(TAG, "Sent write: %s", format_hex_pretty(frame.data(), std::min(frame_size, (size_t)32)).c_str());
+  } else {
+    // Read frame format: addr(1) + func(1) + start_addr(2) + end_addr(2) + data_len(2) + crc(2)
+    uint8_t frame[10];
+    frame[0] = request.address;
+    frame[1] = request.function;
+    frame[2] = request.start_address >> 8;
+    frame[3] = request.start_address & 0xFF;
+    frame[4] = request.end_address >> 8;
+    frame[5] = request.end_address & 0xFF;
+    frame[6] = 0x00;
+    frame[7] = 0x00;
+
+    uint16_t crc = crc16_ecoworthy(frame, 8);
+    frame[8] = crc & 0xFF;        // LSB first
+    frame[9] = (crc >> 8) & 0xFF;
+
+    if (this->flow_control_pin_ != nullptr) {
+      this->flow_control_pin_->digital_write(true);
+    }
+
+    this->write_array(frame, 10);
+    this->flush();
+
+    if (this->flow_control_pin_ != nullptr) {
+      this->flow_control_pin_->digital_write(false);
+    }
+
+    ESP_LOGV(TAG, "Sent read: %s", format_hex_pretty(frame, 10).c_str());
   }
-
-  this->write_array(frame, 10);
-  this->flush();
-
-  if (this->flow_control_pin_ != nullptr) {
-    this->flow_control_pin_->digital_write(false);
-  }
-
-  ESP_LOGV(TAG, "Sent: %s", format_hex_pretty(frame, 10).c_str());
+  
   this->last_send_ = millis();
   this->waiting_for_response_ = true;
 }

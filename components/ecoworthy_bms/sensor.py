@@ -88,7 +88,27 @@ CONF_ALARM_BITMASK = "alarm_bitmask"
 CONF_MOSFET_STATUS_BITMASK = "mosfet_status_bitmask"
 CONF_BALANCING_BITMASK = "balancing_bitmask"
 
+# Configuration sensors (from 0x1C00 and 0x2000 blocks)
+CONF_BALANCE_VOLTAGE = "balance_voltage"
+CONF_BALANCE_DIFFERENCE = "balance_difference"
+CONF_HEATER_START_TEMP = "heater_start_temp"
+CONF_HEATER_STOP_TEMP = "heater_stop_temp"
+CONF_FULL_CHARGE_VOLTAGE = "full_charge_voltage"
+CONF_FULL_CHARGE_CURRENT = "full_charge_current"
+CONF_SLEEP_VOLTAGE = "sleep_voltage"
+CONF_SLEEP_DELAY = "sleep_delay"
+CONF_TOTAL_CHARGE = "total_charge"
+CONF_TOTAL_DISCHARGE = "total_discharge"
+CONF_CONFIGURED_CVL = "configured_cvl"
+CONF_CONFIGURED_CCL = "configured_ccl"
+CONF_CONFIGURED_DVL = "configured_dvl"
+CONF_CONFIGURED_DCL = "configured_dcl"
+CONF_SHUNT_RESISTANCE = "shunt_resistance"
+CONF_HARDWARE_VERSION = "hardware_version"
+
 UNIT_AMPERE_HOURS = "Ah"
+UNIT_MINUTES = "min"
+UNIT_MICROOHM = "μΩ"
 
 CELL_VOLTAGE_SCHEMA = sensor.sensor_schema(
     unit_of_measurement=UNIT_VOLT,
@@ -257,6 +277,83 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             accuracy_decimals=0,
             icon="mdi:scale-balance",
         ),
+        # Configuration sensors (from 0x1C00 and 0x2000 blocks)
+        cv.Optional(CONF_BALANCE_VOLTAGE): CELL_VOLTAGE_SCHEMA,
+        cv.Optional(CONF_BALANCE_DIFFERENCE): CELL_VOLTAGE_SCHEMA,
+        cv.Optional(CONF_HEATER_START_TEMP): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_HEATER_STOP_TEMP): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_FULL_CHARGE_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_FULL_CHARGE_CURRENT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_SLEEP_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_SLEEP_DELAY): sensor.sensor_schema(
+            unit_of_measurement=UNIT_MINUTES,
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_TOTAL_CHARGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE_HOURS,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_ENERGY,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:battery-plus",
+        ),
+        cv.Optional(CONF_TOTAL_DISCHARGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE_HOURS,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_ENERGY,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:battery-minus",
+        ),
+        cv.Optional(CONF_CONFIGURED_CVL): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_CONFIGURED_CCL): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_CONFIGURED_DVL): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_CONFIGURED_DCL): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_SHUNT_RESISTANCE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_MICROOHM,
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:resistor",
+        ),
+        cv.Optional(CONF_HARDWARE_VERSION): sensor.sensor_schema(
+            accuracy_decimals=0,
+            icon="mdi:chip",
+        ),
     }
 )
 
@@ -411,3 +508,68 @@ async def to_code(config):
     if CONF_BALANCING_BITMASK in config:
         sens = await sensor.new_sensor(config[CONF_BALANCING_BITMASK])
         cg.add(hub.set_balancing_bitmask_sensor(sens))
+
+    # Configuration sensors
+    if CONF_BALANCE_VOLTAGE in config:
+        sens = await sensor.new_sensor(config[CONF_BALANCE_VOLTAGE])
+        cg.add(hub.set_balance_voltage_sensor(sens))
+
+    if CONF_BALANCE_DIFFERENCE in config:
+        sens = await sensor.new_sensor(config[CONF_BALANCE_DIFFERENCE])
+        cg.add(hub.set_balance_difference_sensor(sens))
+
+    if CONF_HEATER_START_TEMP in config:
+        sens = await sensor.new_sensor(config[CONF_HEATER_START_TEMP])
+        cg.add(hub.set_heater_start_temp_sensor(sens))
+
+    if CONF_HEATER_STOP_TEMP in config:
+        sens = await sensor.new_sensor(config[CONF_HEATER_STOP_TEMP])
+        cg.add(hub.set_heater_stop_temp_sensor(sens))
+
+    if CONF_FULL_CHARGE_VOLTAGE in config:
+        sens = await sensor.new_sensor(config[CONF_FULL_CHARGE_VOLTAGE])
+        cg.add(hub.set_full_charge_voltage_sensor(sens))
+
+    if CONF_FULL_CHARGE_CURRENT in config:
+        sens = await sensor.new_sensor(config[CONF_FULL_CHARGE_CURRENT])
+        cg.add(hub.set_full_charge_current_sensor(sens))
+
+    if CONF_SLEEP_VOLTAGE in config:
+        sens = await sensor.new_sensor(config[CONF_SLEEP_VOLTAGE])
+        cg.add(hub.set_sleep_voltage_sensor(sens))
+
+    if CONF_SLEEP_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_SLEEP_DELAY])
+        cg.add(hub.set_sleep_delay_sensor(sens))
+
+    if CONF_TOTAL_CHARGE in config:
+        sens = await sensor.new_sensor(config[CONF_TOTAL_CHARGE])
+        cg.add(hub.set_total_charge_sensor(sens))
+
+    if CONF_TOTAL_DISCHARGE in config:
+        sens = await sensor.new_sensor(config[CONF_TOTAL_DISCHARGE])
+        cg.add(hub.set_total_discharge_sensor(sens))
+
+    if CONF_CONFIGURED_CVL in config:
+        sens = await sensor.new_sensor(config[CONF_CONFIGURED_CVL])
+        cg.add(hub.set_configured_cvl_sensor(sens))
+
+    if CONF_CONFIGURED_CCL in config:
+        sens = await sensor.new_sensor(config[CONF_CONFIGURED_CCL])
+        cg.add(hub.set_configured_ccl_sensor(sens))
+
+    if CONF_CONFIGURED_DVL in config:
+        sens = await sensor.new_sensor(config[CONF_CONFIGURED_DVL])
+        cg.add(hub.set_configured_dvl_sensor(sens))
+
+    if CONF_CONFIGURED_DCL in config:
+        sens = await sensor.new_sensor(config[CONF_CONFIGURED_DCL])
+        cg.add(hub.set_configured_dcl_sensor(sens))
+
+    if CONF_SHUNT_RESISTANCE in config:
+        sens = await sensor.new_sensor(config[CONF_SHUNT_RESISTANCE])
+        cg.add(hub.set_shunt_resistance_sensor(sens))
+
+    if CONF_HARDWARE_VERSION in config:
+        sens = await sensor.new_sensor(config[CONF_HARDWARE_VERSION])
+        cg.add(hub.set_hardware_version_sensor(sens))

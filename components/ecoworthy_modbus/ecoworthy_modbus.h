@@ -17,7 +17,8 @@ struct ModbusRequest {
   uint8_t function;
   uint16_t start_address;
   uint16_t end_address;
-  uint16_t data_length;
+  std::vector<uint8_t> data;  // For write commands
+  bool is_write;
 };
 
 class EcoworthyModbus : public uart::UARTDevice, public Component {
@@ -34,6 +35,8 @@ class EcoworthyModbus : public uart::UARTDevice, public Component {
 
   // Ecoworthy uses a custom frame format: addr(1) + func(1) + start_addr(2) + end_addr(2) + data_len(2) + crc(2)
   void send(uint8_t address, uint8_t function, uint16_t start_address, uint16_t end_address);
+  // Write command with data payload (includes 0x114A4244 prefix automatically)
+  void send_write(uint8_t address, uint16_t start_address, uint16_t end_address, const std::vector<uint8_t> &data);
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
  protected:
@@ -60,6 +63,9 @@ class EcoworthyModbusDevice {
   virtual void on_modbus_data(const std::vector<uint8_t> &data) = 0;
   void send(uint8_t function, uint16_t start_address, uint16_t end_address) {
     this->parent_->send(this->address_, function, start_address, end_address);
+  }
+  void send_write(uint16_t start_address, uint16_t end_address, const std::vector<uint8_t> &data) {
+    this->parent_->send_write(this->address_, start_address, end_address, data);
   }
 
  protected:

@@ -193,6 +193,34 @@ sensor:
     balancing_bitmask:
       name: "${name} balancing bitmask"
 
+    # Configuration sensors (from Pack Configuration Parameters)
+    balance_voltage:
+      name: "${name} balance voltage"
+    balance_difference:
+      name: "${name} balance difference"
+    full_charge_voltage:
+      name: "${name} full charge voltage"
+    full_charge_current:
+      name: "${name} full charge current"
+    sleep_voltage:
+      name: "${name} sleep voltage"
+    sleep_delay:
+      name: "${name} sleep delay"
+    total_charge:
+      name: "${name} total charge"
+    total_discharge:
+      name: "${name} total discharge"
+    configured_cvl:
+      name: "${name} configured CVL"
+    configured_ccl:
+      name: "${name} configured CCL"
+    configured_dvl:
+      name: "${name} configured DVL"
+    configured_dcl:
+      name: "${name} configured DCL"
+    hardware_version:
+      name: "${name} hardware version"
+
 text_sensor:
   - platform: ecoworthy_bms
     ecoworthy_bms_id: bms0
@@ -206,3 +234,35 @@ text_sensor:
       name: "${name} serial number"
     firmware_version:
       name: "${name} firmware version"
+    bms_serial_number:
+      name: "${name} BMS serial number"
+    pack_serial_number:
+      name: "${name} pack serial number"
+    manufacturer:
+      name: "${name} manufacturer"
+    bms_model:
+      name: "${name} BMS model"
+    balance_mode:
+      name: "${name} balance mode"
+    can_protocol:
+      name: "${name} CAN protocol"
+    rs485_protocol:
+      name: "${name} RS485 protocol"
+
+# MOS Control Switches
+switch:
+  - platform: ecoworthy_bms
+    ecoworthy_bms_id: bms0
+    charge_mos:
+      name: "${name} charge MOS control"
+    discharge_mos:
+      name: "${name} discharge MOS control"
+
+# Sleep Mode Buttons
+button:
+  - platform: ecoworthy_bms
+    ecoworthy_bms_id: bms0
+    standby_sleep:
+      name: "${name} standby sleep"
+    deep_sleep:
+      name: "${name} deep sleep"
