@@ -624,10 +624,12 @@ void EcoworthyBms::on_product_info_data_(const std::vector<uint8_t> &data) {
 
   ESP_LOGV(TAG, "Processing %d bytes of product info data", data_length);
 
-  // Offset 4: Hardware version
+  // Offset 4: Hardware version (as text)
   if (data_length >= 6) {
-    float hw_version = get_16bit(4);
-    this->publish_state_(this->hardware_version_sensor_, hw_version);
+    uint16_t hw_version = get_16bit(4);
+    char hw_str[16];
+    snprintf(hw_str, sizeof(hw_str), "v%d.%d", hw_version / 10, hw_version % 10);
+    this->publish_state_(this->hardware_version_text_sensor_, std::string(hw_str));
   }
 
   // Offset 6-8: Firmware version (major.minor.patch)

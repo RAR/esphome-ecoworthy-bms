@@ -142,9 +142,6 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_configured_dcl_sensor(sensor::Sensor *s) { configured_dcl_sensor_ = s; }
   void set_shunt_resistance_sensor(sensor::Sensor *s) { shunt_resistance_sensor_ = s; }
 
-  // Product info sensors (from 0x2810 block)
-  void set_hardware_version_sensor(sensor::Sensor *s) { hardware_version_sensor_ = s; }
-
   // Text sensors
   void set_operation_status_text_sensor(text_sensor::TextSensor *operation_status) { operation_status_text_sensor_ = operation_status; }
   void set_fault_text_sensor(text_sensor::TextSensor *fault) { fault_text_sensor_ = fault; }
@@ -158,6 +155,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_balance_mode_text_sensor(text_sensor::TextSensor *s) { balance_mode_text_sensor_ = s; }
   void set_can_protocol_text_sensor(text_sensor::TextSensor *s) { can_protocol_text_sensor_ = s; }
   void set_rs485_protocol_text_sensor(text_sensor::TextSensor *s) { rs485_protocol_text_sensor_ = s; }
+  void set_hardware_version_text_sensor(text_sensor::TextSensor *s) { hardware_version_text_sensor_ = s; }
 
   // Switches for MOS control (JK-BMS naming convention)
   void set_charging_switch(ChargingSwitch *s) { charging_switch_ = s; }
@@ -253,7 +251,6 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *configured_dvl_sensor_{nullptr};
   sensor::Sensor *configured_dcl_sensor_{nullptr};
   sensor::Sensor *shunt_resistance_sensor_{nullptr};
-  sensor::Sensor *hardware_version_sensor_{nullptr};
 
   // Text sensors
   text_sensor::TextSensor *operation_status_text_sensor_{nullptr};
@@ -268,6 +265,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   text_sensor::TextSensor *balance_mode_text_sensor_{nullptr};
   text_sensor::TextSensor *can_protocol_text_sensor_{nullptr};
   text_sensor::TextSensor *rs485_protocol_text_sensor_{nullptr};
+  text_sensor::TextSensor *hardware_version_text_sensor_{nullptr};
 
   // Switches
   ChargingSwitch *charging_switch_{nullptr};

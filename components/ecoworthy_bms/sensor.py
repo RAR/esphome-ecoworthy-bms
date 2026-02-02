@@ -105,7 +105,6 @@ CONF_CONFIGURED_CCL = "configured_ccl"
 CONF_CONFIGURED_DVL = "configured_dvl"
 CONF_CONFIGURED_DCL = "configured_dcl"
 CONF_SHUNT_RESISTANCE = "shunt_resistance"
-CONF_HARDWARE_VERSION = "hardware_version"
 
 UNIT_AMPERE_HOURS = "Ah"
 UNIT_MINUTES = "min"
@@ -351,10 +350,6 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             state_class=STATE_CLASS_MEASUREMENT,
             icon="mdi:resistor",
         ),
-        cv.Optional(CONF_HARDWARE_VERSION): sensor.sensor_schema(
-            accuracy_decimals=0,
-            icon="mdi:chip",
-        ),
     }
 )
 
@@ -570,7 +565,3 @@ async def to_code(config):
     if CONF_SHUNT_RESISTANCE in config:
         sens = await sensor.new_sensor(config[CONF_SHUNT_RESISTANCE])
         cg.add(hub.set_shunt_resistance_sensor(sens))
-
-    if CONF_HARDWARE_VERSION in config:
-        sens = await sensor.new_sensor(config[CONF_HARDWARE_VERSION])
-        cg.add(hub.set_hardware_version_sensor(sens))

@@ -18,6 +18,7 @@ CONF_BMS_MODEL = "bms_model"
 CONF_BALANCE_MODE = "balance_mode"
 CONF_CAN_PROTOCOL = "can_protocol"
 CONF_RS485_PROTOCOL = "rs485_protocol"
+CONF_HARDWARE_VERSION = "hardware_version"
 
 CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
     {
@@ -56,6 +57,9 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
         ),
         cv.Optional(CONF_RS485_PROTOCOL): text_sensor.text_sensor_schema(
             icon="mdi:serial-port",
+        ),
+        cv.Optional(CONF_HARDWARE_VERSION): text_sensor.text_sensor_schema(
+            icon="mdi:chip",
         ),
     }
 )
@@ -111,3 +115,7 @@ async def to_code(config):
     if CONF_RS485_PROTOCOL in config:
         sens = await text_sensor.new_text_sensor(config[CONF_RS485_PROTOCOL])
         cg.add(hub.set_rs485_protocol_text_sensor(sens))
+
+    if CONF_HARDWARE_VERSION in config:
+        sens = await text_sensor.new_text_sensor(config[CONF_HARDWARE_VERSION])
+        cg.add(hub.set_hardware_version_text_sensor(sens))
