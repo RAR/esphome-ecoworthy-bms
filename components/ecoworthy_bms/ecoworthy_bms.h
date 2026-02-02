@@ -13,8 +13,8 @@ namespace ecoworthy_bms {
 
 class EcoworthyBms;
 
-// Switch classes for MOS control
-class ChargeMosSwitch : public switch_::Switch, public Component {
+// Switch classes for MOS control (JK-BMS naming convention)
+class ChargingSwitch : public switch_::Switch, public Component {
  public:
   void set_parent(EcoworthyBms *parent) { this->parent_ = parent; }
   void write_state(bool state) override;
@@ -22,7 +22,7 @@ class ChargeMosSwitch : public switch_::Switch, public Component {
   EcoworthyBms *parent_;
 };
 
-class DischargeMosSwitch : public switch_::Switch, public Component {
+class DischargingSwitch : public switch_::Switch, public Component {
  public:
   void set_parent(EcoworthyBms *parent) { this->parent_ = parent; }
   void write_state(bool state) override;
@@ -57,8 +57,8 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_discharging_binary_sensor(binary_sensor::BinarySensor *discharging) {
     discharging_binary_sensor_ = discharging;
   }
-  void set_charge_mos_binary_sensor(binary_sensor::BinarySensor *charge_mos) { charge_mos_binary_sensor_ = charge_mos; }
-  void set_discharge_mos_binary_sensor(binary_sensor::BinarySensor *discharge_mos) { discharge_mos_binary_sensor_ = discharge_mos; }
+  void set_charging_switch_binary_sensor(binary_sensor::BinarySensor *charging_switch) { charging_switch_binary_sensor_ = charging_switch; }
+  void set_discharging_switch_binary_sensor(binary_sensor::BinarySensor *discharging_switch) { discharging_switch_binary_sensor_ = discharging_switch; }
   void set_balancing_binary_sensor(binary_sensor::BinarySensor *balancing) { balancing_binary_sensor_ = balancing; }
 
   // Voltage sensors
@@ -71,8 +71,8 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_delta_cell_voltage_sensor(sensor::Sensor *delta_cell_voltage) {
     delta_cell_voltage_sensor_ = delta_cell_voltage;
   }
-  void set_cell_average_voltage_sensor(sensor::Sensor *cell_average_voltage) {
-    cell_average_voltage_sensor_ = cell_average_voltage;
+  void set_average_cell_voltage_sensor(sensor::Sensor *average_cell_voltage) {
+    average_cell_voltage_sensor_ = average_cell_voltage;
   }
   void set_min_voltage_cell_sensor(sensor::Sensor *min_voltage_cell) {
     min_voltage_cell_sensor_ = min_voltage_cell;
@@ -93,7 +93,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_temperature_sensor(uint8_t temp, sensor::Sensor *temperature) {
     this->temperatures_[temp].temperature_sensor_ = temperature;
   }
-  void set_mosfet_temperature_sensor(sensor::Sensor *mosfet_temp) { mosfet_temperature_sensor_ = mosfet_temp; }
+  void set_power_tube_temperature_sensor(sensor::Sensor *power_tube_temp) { power_tube_temperature_sensor_ = power_tube_temp; }
   void set_ambient_temperature_sensor(sensor::Sensor *ambient_temp) { ambient_temperature_sensor_ = ambient_temp; }
   void set_min_temperature_sensor(sensor::Sensor *min_temp) { min_temperature_sensor_ = min_temp; }
   void set_max_temperature_sensor(sensor::Sensor *max_temp) { max_temperature_sensor_ = max_temp; }
@@ -159,9 +159,9 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_can_protocol_text_sensor(text_sensor::TextSensor *s) { can_protocol_text_sensor_ = s; }
   void set_rs485_protocol_text_sensor(text_sensor::TextSensor *s) { rs485_protocol_text_sensor_ = s; }
 
-  // Switches for MOS control
-  void set_charge_mos_switch(ChargeMosSwitch *s) { charge_mos_switch_ = s; }
-  void set_discharge_mos_switch(DischargeMosSwitch *s) { discharge_mos_switch_ = s; }
+  // Switches for MOS control (JK-BMS naming convention)
+  void set_charging_switch(ChargingSwitch *s) { charging_switch_ = s; }
+  void set_discharging_switch(DischargingSwitch *s) { discharging_switch_ = s; }
 
   // Buttons for sleep modes
   void set_standby_sleep_button(StandbySleepButton *b) { standby_sleep_button_ = b; }
@@ -187,8 +187,8 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   binary_sensor::BinarySensor *online_status_binary_sensor_{nullptr};
   binary_sensor::BinarySensor *charging_binary_sensor_{nullptr};
   binary_sensor::BinarySensor *discharging_binary_sensor_{nullptr};
-  binary_sensor::BinarySensor *charge_mos_binary_sensor_{nullptr};
-  binary_sensor::BinarySensor *discharge_mos_binary_sensor_{nullptr};
+  binary_sensor::BinarySensor *charging_switch_binary_sensor_{nullptr};
+  binary_sensor::BinarySensor *discharging_switch_binary_sensor_{nullptr};
   binary_sensor::BinarySensor *balancing_binary_sensor_{nullptr};
 
   // Voltage sensors
@@ -196,7 +196,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *min_cell_voltage_sensor_{nullptr};
   sensor::Sensor *max_cell_voltage_sensor_{nullptr};
   sensor::Sensor *delta_cell_voltage_sensor_{nullptr};
-  sensor::Sensor *cell_average_voltage_sensor_{nullptr};
+  sensor::Sensor *average_cell_voltage_sensor_{nullptr};
   sensor::Sensor *min_voltage_cell_sensor_{nullptr};
   sensor::Sensor *max_voltage_cell_sensor_{nullptr};
 
@@ -207,7 +207,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *discharging_power_sensor_{nullptr};
 
   // Temperature sensors
-  sensor::Sensor *mosfet_temperature_sensor_{nullptr};
+  sensor::Sensor *power_tube_temperature_sensor_{nullptr};
   sensor::Sensor *ambient_temperature_sensor_{nullptr};
   sensor::Sensor *min_temperature_sensor_{nullptr};
   sensor::Sensor *max_temperature_sensor_{nullptr};
@@ -270,8 +270,8 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   text_sensor::TextSensor *rs485_protocol_text_sensor_{nullptr};
 
   // Switches
-  ChargeMosSwitch *charge_mos_switch_{nullptr};
-  DischargeMosSwitch *discharge_mos_switch_{nullptr};
+  ChargingSwitch *charging_switch_{nullptr};
+  DischargingSwitch *discharging_switch_{nullptr};
 
   // Buttons
   StandbySleepButton *standby_sleep_button_{nullptr};

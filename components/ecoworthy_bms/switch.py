@@ -13,22 +13,23 @@ CODEOWNERS = ["@RAR"]
 
 DEPENDENCIES = ["ecoworthy_bms"]
 
-ChargeMosSwitch = ecoworthy_bms_ns.class_("ChargeMosSwitch", switch.Switch, cg.Component)
-DischargeMosSwitch = ecoworthy_bms_ns.class_("DischargeMosSwitch", switch.Switch, cg.Component)
+ChargingSwitch = ecoworthy_bms_ns.class_("ChargingSwitch", switch.Switch, cg.Component)
+DischargingSwitch = ecoworthy_bms_ns.class_("DischargingSwitch", switch.Switch, cg.Component)
 
-CONF_CHARGE_MOS = "charge_mos"
-CONF_DISCHARGE_MOS = "discharge_mos"
+# JK-BMS naming convention: charging/discharging (not charge_mos/discharge_mos)
+CONF_CHARGING = "charging"
+CONF_DISCHARGING = "discharging"
 
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_ECOWORTHY_BMS_ID): cv.use_id(EcoworthyBms),
-        cv.Optional(CONF_CHARGE_MOS): switch.switch_schema(
-            ChargeMosSwitch,
+        cv.Optional(CONF_CHARGING): switch.switch_schema(
+            ChargingSwitch,
             entity_category=ENTITY_CATEGORY_CONFIG,
             icon=ICON_FLASH,
         ),
-        cv.Optional(CONF_DISCHARGE_MOS): switch.switch_schema(
-            DischargeMosSwitch,
+        cv.Optional(CONF_DISCHARGING): switch.switch_schema(
+            DischargingSwitch,
             entity_category=ENTITY_CATEGORY_CONFIG,
             icon=ICON_FLASH,
         ),
@@ -39,14 +40,14 @@ CONFIG_SCHEMA = cv.Schema(
 async def to_code(config):
     hub = await cg.get_variable(config[CONF_ECOWORTHY_BMS_ID])
 
-    if CONF_CHARGE_MOS in config:
-        s = await switch.new_switch(config[CONF_CHARGE_MOS])
-        await cg.register_component(s, config[CONF_CHARGE_MOS])
+    if CONF_CHARGING in config:
+        s = await switch.new_switch(config[CONF_CHARGING])
+        await cg.register_component(s, config[CONF_CHARGING])
         cg.add(s.set_parent(hub))
-        cg.add(hub.set_charge_mos_switch(s))
+        cg.add(hub.set_charging_switch(s))
 
-    if CONF_DISCHARGE_MOS in config:
-        s = await switch.new_switch(config[CONF_DISCHARGE_MOS])
-        await cg.register_component(s, config[CONF_DISCHARGE_MOS])
+    if CONF_DISCHARGING in config:
+        s = await switch.new_switch(config[CONF_DISCHARGING])
+        await cg.register_component(s, config[CONF_DISCHARGING])
         cg.add(s.set_parent(hub))
-        cg.add(hub.set_discharge_mos_switch(s))
+        cg.add(hub.set_discharging_switch(s))

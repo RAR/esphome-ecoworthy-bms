@@ -184,9 +184,9 @@ void EcoworthyBms::on_pack_status_data_(const std::vector<uint8_t> &data) {
   float rated_capacity = get_16bit(14) / 100.0f;
   this->publish_state_(this->rated_capacity_sensor_, rated_capacity);
 
-  // Offset 16: MOSFET temperature: °C = (val - 500) / 10
-  float mosfet_temp = (get_16bit(16) - 500) / 10.0f;
-  this->publish_state_(this->mosfet_temperature_sensor_, mosfet_temp);
+  // Offset 16: MOSFET (power tube) temperature: °C = (val - 500) / 10
+  float power_tube_temp = (get_16bit(16) - 500) / 10.0f;
+  this->publish_state_(this->power_tube_temperature_sensor_, power_tube_temp);
 
   // Offset 18: ambient temperature: °C = (val - 500) / 10
   float ambient_temp = (get_16bit(18) - 500) / 10.0f;
@@ -220,15 +220,15 @@ void EcoworthyBms::on_pack_status_data_(const std::vector<uint8_t> &data) {
   this->discharge_mos_state_ = (mosfet_status & 0x0001) != 0;
   this->charge_mos_state_ = (mosfet_status & 0x0002) != 0;
   
-  this->publish_state_(this->discharge_mos_binary_sensor_, this->discharge_mos_state_);
-  this->publish_state_(this->charge_mos_binary_sensor_, this->charge_mos_state_);
+  this->publish_state_(this->discharging_switch_binary_sensor_, this->discharge_mos_state_);
+  this->publish_state_(this->charging_switch_binary_sensor_, this->charge_mos_state_);
   
-  // Update switch states
-  if (this->charge_mos_switch_ != nullptr) {
-    this->charge_mos_switch_->publish_state(this->charge_mos_state_);
+  // Update switch states (JK-BMS naming: charging/discharging)
+  if (this->charging_switch_ != nullptr) {
+    this->charging_switch_->publish_state(this->charge_mos_state_);
   }
-  if (this->discharge_mos_switch_ != nullptr) {
-    this->discharge_mos_switch_->publish_state(this->discharge_mos_state_);
+  if (this->discharging_switch_ != nullptr) {
+    this->discharging_switch_->publish_state(this->discharge_mos_state_);
   }
 
   // Offset 34: bitmask: 0: Charger 1: LOAD 2: SW
@@ -255,7 +255,7 @@ void EcoworthyBms::on_pack_status_data_(const std::vector<uint8_t> &data) {
 
   // Offset 46: avg cell voltage, mV
   float avg_cell_voltage = get_16bit(46) * 0.001f;
-  this->publish_state_(this->cell_average_voltage_sensor_, avg_cell_voltage);
+  this->publish_state_(this->average_cell_voltage_sensor_, avg_cell_voltage);
 
   // Calculate delta
   this->publish_state_(this->delta_cell_voltage_sensor_, max_cell_voltage - min_cell_voltage);
@@ -688,15 +688,15 @@ void EcoworthyBms::set_sleep_mode(uint8_t mode) {
   this->send_write(REG_SLEEP_MODE, REG_SLEEP_MODE, data);
 }
 
-// Switch implementations
-void ChargeMosSwitch::write_state(bool state) {
+// Switch implementations (JK-BMS naming convention)
+void ChargingSwitch::write_state(bool state) {
   if (this->parent_ != nullptr) {
     this->parent_->set_charge_mos(state);
   }
   // Don't publish state here - wait for BMS to confirm
 }
 
-void DischargeMosSwitch::write_state(bool state) {
+void DischargingSwitch::write_state(bool state) {
   if (this->parent_ != nullptr) {
     this->parent_->set_discharge_mos(state);
   }

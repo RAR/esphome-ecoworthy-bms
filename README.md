@@ -117,8 +117,8 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 | `online_status` | BMS communication status |
 | `charging` | Battery is currently charging |
 | `discharging` | Battery is currently discharging |
-| `charge_mos` | Charge MOSFET is on |
-| `discharge_mos` | Discharge MOSFET is on |
+| `charging_switch` | Charge MOSFET is enabled |
+| `discharging_switch` | Discharge MOSFET is enabled |
 | `balancing` | Cells are currently being balanced |
 
 ### Voltage Sensors
@@ -129,7 +129,7 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 | `min_cell_voltage` | V | Lowest cell voltage |
 | `max_cell_voltage` | V | Highest cell voltage |
 | `delta_cell_voltage` | V | Difference between max and min cell voltage |
-| `cell_average_voltage` | V | Average cell voltage |
+| `average_cell_voltage` | V | Average cell voltage |
 | `cell_voltage_1` - `cell_voltage_16` | V | Individual cell voltages |
 
 ### Current and Power Sensors
@@ -145,8 +145,8 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 
 | Sensor | Unit | Description |
 |--------|------|-------------|
-| `temperature_1` - `temperature_4` | °C | Cell temperature sensors |
-| `mosfet_temperature` | °C | MOSFET temperature |
+| `temperature_sensor_1` - `temperature_sensor_4` | °C | Cell temperature sensors |
+| `power_tube_temperature` | °C | Power tube (MOSFET) temperature |
 | `ambient_temperature` | °C | Ambient temperature |
 | `min_temperature` | °C | Lowest temperature reading |
 | `max_temperature` | °C | Highest temperature reading |
@@ -221,8 +221,8 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 
 | Switch | Description |
 |--------|-------------|
-| `charge_mos` | Enable/disable charge MOSFET |
-| `discharge_mos` | Enable/disable discharge MOSFET |
+| `charging` | Enable/disable charge MOSFET |
+| `discharging` | Enable/disable discharge MOSFET |
 
 > ⚠️ **Warning:** Disabling MOSFETs will disconnect the battery from the load/charger. Use with caution!
 

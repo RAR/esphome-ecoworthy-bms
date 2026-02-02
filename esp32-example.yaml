@@ -62,10 +62,10 @@ binary_sensor:
       name: "${name} charging"
     discharging:
       name: "${name} discharging"
-    charge_mos:
-      name: "${name} charge MOS"
-    discharge_mos:
-      name: "${name} discharge MOS"
+    charging_switch:
+      name: "${name} charging switch"
+    discharging_switch:
+      name: "${name} discharging switch"
     balancing:
       name: "${name} balancing"
 
@@ -82,7 +82,7 @@ sensor:
       name: "${name} max cell voltage"
     delta_cell_voltage:
       name: "${name} delta cell voltage"
-    cell_average_voltage:
+    average_cell_voltage:
       name: "${name} average cell voltage"
     min_voltage_cell:
       name: "${name} min voltage cell"
@@ -133,17 +133,17 @@ sensor:
     discharging_power:
       name: "${name} discharging power"
 
-    # Temperature sensors
-    temperature_1:
-      name: "${name} temperature 1"
-    temperature_2:
-      name: "${name} temperature 2"
-    temperature_3:
-      name: "${name} temperature 3"
-    temperature_4:
-      name: "${name} temperature 4"
-    mosfet_temperature:
-      name: "${name} MOSFET temperature"
+    # Temperature sensors (JK-BMS naming convention)
+    temperature_sensor_1:
+      name: "${name} temperature sensor 1"
+    temperature_sensor_2:
+      name: "${name} temperature sensor 2"
+    temperature_sensor_3:
+      name: "${name} temperature sensor 3"
+    temperature_sensor_4:
+      name: "${name} temperature sensor 4"
+    power_tube_temperature:
+      name: "${name} power tube temperature"
     ambient_temperature:
       name: "${name} ambient temperature"
     min_temperature:
@@ -249,14 +249,14 @@ text_sensor:
     rs485_protocol:
       name: "${name} RS485 protocol"
 
-# MOS Control Switches
+# MOS Control Switches (JK-BMS naming convention)
 switch:
   - platform: ecoworthy_bms
     ecoworthy_bms_id: bms0
-    charge_mos:
-      name: "${name} charge MOS control"
-    discharge_mos:
-      name: "${name} discharge MOS control"
+    charging:
+      name: "${name} charging"
+    discharging:
+      name: "${name} discharging"
 
 # Sleep Mode Buttons
 button:

@@ -29,9 +29,10 @@ CONF_TOTAL_VOLTAGE = "total_voltage"
 CONF_MIN_CELL_VOLTAGE = "min_cell_voltage"
 CONF_MAX_CELL_VOLTAGE = "max_cell_voltage"
 CONF_DELTA_CELL_VOLTAGE = "delta_cell_voltage"
-CONF_CELL_AVERAGE_VOLTAGE = "cell_average_voltage"
+CONF_AVERAGE_CELL_VOLTAGE = "average_cell_voltage"
 CONF_MIN_VOLTAGE_CELL = "min_voltage_cell"
 CONF_MAX_VOLTAGE_CELL = "max_voltage_cell"
+# Note: Using average_cell_voltage (not cell_average_voltage) to match JK-BMS naming
 CONF_CELL_VOLTAGE_1 = "cell_voltage_1"
 CONF_CELL_VOLTAGE_2 = "cell_voltage_2"
 CONF_CELL_VOLTAGE_3 = "cell_voltage_3"
@@ -53,12 +54,12 @@ CONF_CELL_VOLTAGE_16 = "cell_voltage_16"
 CONF_CHARGING_POWER = "charging_power"
 CONF_DISCHARGING_POWER = "discharging_power"
 
-# Temperature sensors
-CONF_TEMPERATURE_1 = "temperature_1"
-CONF_TEMPERATURE_2 = "temperature_2"
-CONF_TEMPERATURE_3 = "temperature_3"
-CONF_TEMPERATURE_4 = "temperature_4"
-CONF_MOSFET_TEMPERATURE = "mosfet_temperature"
+# Temperature sensors (JK-BMS naming convention)
+CONF_TEMPERATURE_SENSOR_1 = "temperature_sensor_1"
+CONF_TEMPERATURE_SENSOR_2 = "temperature_sensor_2"
+CONF_TEMPERATURE_SENSOR_3 = "temperature_sensor_3"
+CONF_TEMPERATURE_SENSOR_4 = "temperature_sensor_4"
+CONF_POWER_TUBE_TEMPERATURE = "power_tube_temperature"
 CONF_AMBIENT_TEMPERATURE = "ambient_temperature"
 CONF_MIN_TEMPERATURE = "min_temperature"
 CONF_MAX_TEMPERATURE = "max_temperature"
@@ -136,7 +137,7 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
         cv.Optional(CONF_MIN_CELL_VOLTAGE): CELL_VOLTAGE_SCHEMA,
         cv.Optional(CONF_MAX_CELL_VOLTAGE): CELL_VOLTAGE_SCHEMA,
         cv.Optional(CONF_DELTA_CELL_VOLTAGE): CELL_VOLTAGE_SCHEMA,
-        cv.Optional(CONF_CELL_AVERAGE_VOLTAGE): CELL_VOLTAGE_SCHEMA,
+        cv.Optional(CONF_AVERAGE_CELL_VOLTAGE): CELL_VOLTAGE_SCHEMA,
         cv.Optional(CONF_MIN_VOLTAGE_CELL): sensor.sensor_schema(
             accuracy_decimals=0,
         ),
@@ -184,12 +185,12 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             device_class=DEVICE_CLASS_POWER,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        # Temperature sensors
-        cv.Optional(CONF_TEMPERATURE_1): TEMPERATURE_SCHEMA,
-        cv.Optional(CONF_TEMPERATURE_2): TEMPERATURE_SCHEMA,
-        cv.Optional(CONF_TEMPERATURE_3): TEMPERATURE_SCHEMA,
-        cv.Optional(CONF_TEMPERATURE_4): TEMPERATURE_SCHEMA,
-        cv.Optional(CONF_MOSFET_TEMPERATURE): TEMPERATURE_SCHEMA,
+        # Temperature sensors (JK-BMS naming convention)
+        cv.Optional(CONF_TEMPERATURE_SENSOR_1): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_TEMPERATURE_SENSOR_2): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_TEMPERATURE_SENSOR_3): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_TEMPERATURE_SENSOR_4): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_POWER_TUBE_TEMPERATURE): TEMPERATURE_SCHEMA,
         cv.Optional(CONF_AMBIENT_TEMPERATURE): TEMPERATURE_SCHEMA,
         cv.Optional(CONF_MIN_TEMPERATURE): TEMPERATURE_SCHEMA,
         cv.Optional(CONF_MAX_TEMPERATURE): TEMPERATURE_SCHEMA,
@@ -378,9 +379,9 @@ async def to_code(config):
         sens = await sensor.new_sensor(config[CONF_DELTA_CELL_VOLTAGE])
         cg.add(hub.set_delta_cell_voltage_sensor(sens))
     
-    if CONF_CELL_AVERAGE_VOLTAGE in config:
-        sens = await sensor.new_sensor(config[CONF_CELL_AVERAGE_VOLTAGE])
-        cg.add(hub.set_cell_average_voltage_sensor(sens))
+    if CONF_AVERAGE_CELL_VOLTAGE in config:
+        sens = await sensor.new_sensor(config[CONF_AVERAGE_CELL_VOLTAGE])
+        cg.add(hub.set_average_cell_voltage_sensor(sens))
     
     if CONF_MIN_VOLTAGE_CELL in config:
         sens = await sensor.new_sensor(config[CONF_MIN_VOLTAGE_CELL])
@@ -414,16 +415,16 @@ async def to_code(config):
         sens = await sensor.new_sensor(config[CONF_DISCHARGING_POWER])
         cg.add(hub.set_discharging_power_sensor(sens))
 
-    # Temperature sensors
+    # Temperature sensors (JK-BMS naming convention)
     for i in range(1, 5):
-        conf_name = f"temperature_{i}"
+        conf_name = f"temperature_sensor_{i}"
         if conf_name in config:
             sens = await sensor.new_sensor(config[conf_name])
             cg.add(hub.set_temperature_sensor(i - 1, sens))
 
-    if CONF_MOSFET_TEMPERATURE in config:
-        sens = await sensor.new_sensor(config[CONF_MOSFET_TEMPERATURE])
-        cg.add(hub.set_mosfet_temperature_sensor(sens))
+    if CONF_POWER_TUBE_TEMPERATURE in config:
+        sens = await sensor.new_sensor(config[CONF_POWER_TUBE_TEMPERATURE])
+        cg.add(hub.set_power_tube_temperature_sensor(sens))
     
     if CONF_AMBIENT_TEMPERATURE in config:
         sens = await sensor.new_sensor(config[CONF_AMBIENT_TEMPERATURE])

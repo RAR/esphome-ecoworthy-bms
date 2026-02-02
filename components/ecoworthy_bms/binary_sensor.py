@@ -10,8 +10,9 @@ DEPENDENCIES = ["ecoworthy_bms"]
 CONF_ONLINE_STATUS = "online_status"
 CONF_CHARGING = "charging"
 CONF_DISCHARGING = "discharging"
-CONF_CHARGE_MOS = "charge_mos"
-CONF_DISCHARGE_MOS = "discharge_mos"
+# JK-BMS naming convention: charging_switch/discharging_switch for MOS status
+CONF_CHARGING_SWITCH = "charging_switch"
+CONF_DISCHARGING_SWITCH = "discharging_switch"
 CONF_BALANCING = "balancing"
 
 CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
@@ -25,10 +26,10 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
         cv.Optional(CONF_DISCHARGING): binary_sensor.binary_sensor_schema(
             icon="mdi:battery-minus",
         ),
-        cv.Optional(CONF_CHARGE_MOS): binary_sensor.binary_sensor_schema(
+        cv.Optional(CONF_CHARGING_SWITCH): binary_sensor.binary_sensor_schema(
             icon="mdi:electric-switch",
         ),
-        cv.Optional(CONF_DISCHARGE_MOS): binary_sensor.binary_sensor_schema(
+        cv.Optional(CONF_DISCHARGING_SWITCH): binary_sensor.binary_sensor_schema(
             icon="mdi:electric-switch",
         ),
         cv.Optional(CONF_BALANCING): binary_sensor.binary_sensor_schema(
@@ -53,13 +54,13 @@ async def to_code(config):
         sens = await binary_sensor.new_binary_sensor(config[CONF_DISCHARGING])
         cg.add(hub.set_discharging_binary_sensor(sens))
 
-    if CONF_CHARGE_MOS in config:
-        sens = await binary_sensor.new_binary_sensor(config[CONF_CHARGE_MOS])
-        cg.add(hub.set_charge_mos_binary_sensor(sens))
+    if CONF_CHARGING_SWITCH in config:
+        sens = await binary_sensor.new_binary_sensor(config[CONF_CHARGING_SWITCH])
+        cg.add(hub.set_charging_switch_binary_sensor(sens))
 
-    if CONF_DISCHARGE_MOS in config:
-        sens = await binary_sensor.new_binary_sensor(config[CONF_DISCHARGE_MOS])
-        cg.add(hub.set_discharge_mos_binary_sensor(sens))
+    if CONF_DISCHARGING_SWITCH in config:
+        sens = await binary_sensor.new_binary_sensor(config[CONF_DISCHARGING_SWITCH])
+        cg.add(hub.set_discharging_switch_binary_sensor(sens))
 
     if CONF_BALANCING in config:
         sens = await binary_sensor.new_binary_sensor(config[CONF_BALANCING])

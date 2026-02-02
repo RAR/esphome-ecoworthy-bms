@@ -27,7 +27,7 @@
                                │
           ┌────────────────────┼────────────────────┐
           │                    │                    │
-          │ Pin 4 (B-)   Pin 5 (A+)   Pin 3 (GND)  │
+          │ Pin 1/8 (B-)  Pin 2/7 (A+)  Pin 3/6 (GND)
           │    │              │            │        │
           │    │              │            │        │
           └────┼──────────────┼────────────┼────────┘
@@ -64,11 +64,11 @@
 
 ### BMS to RS485 Module
 
-| BMS Pin | Signal | RS485 Module |
-|---------|--------|--------------|
-| 4 (Blue) | B- | B- |
-| 5 (Blue/White) | A+ | A+ |
-| 3 (Green/White) | GND | GND |
+| BMS Pin | Signal | RS485 Module | Notes |
+|---------|--------|--------------|-------|
+| 1 or 8 | B- | B- | RS485 Data- |
+| 2 or 7 | A+ | A+ | RS485 Data+ |
+| 3 or 6 | GND | GND | Ground |
 
 ### RS485 Module to ESP32
 
