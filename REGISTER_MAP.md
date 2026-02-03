@@ -185,6 +185,53 @@ The protection parameters block contains voltage and current protection threshol
 - Pack UVP trigger: 42.00V (0x1068 = 4200cV)
 - Pack UVP release: 48.00V (0x12C0 = 4800cV)
 
+## Write Registers
+
+### MOS Control (0x2902)
+
+Controls the charge and discharge MOSFETs.
+
+| Bit | Description |
+|-----|-------------|
+| 0 | Discharge MOSFET |
+| 1 | Charge MOSFET |
+| 2 | Precharge MOSFET |
+| 3 | Heat MOSFET |
+| 4 | Fan |
+| 5 | Charge Limit |
+
+### Dry Contact / Trip Control (0x2904)
+
+Controls dry contacts and emergency trip function.
+
+| Bit | Description |
+|-----|-------------|
+| 0 | Dry contact 1 |
+| 1 | Dry contact 2 |
+| 2 | ADDR OUT |
+| 3 | **Trip** (emergency disconnect) |
+
+**Example command to trip the breaker:**
+```
+TX: 01 79 29 04 29 06 00 06 26 4A 42 44 00 08 [CRC]
+    │  │  │     │     │     │              └── Value: 0x0008 (bit 3 = trip)
+    │  │  │     │     │     └── Identifier: 0x26 'J' 'B' 'D'
+    │  │  │     │     └── Data length: 6 bytes
+    │  │  │     └── End address: 0x2906
+    │  │  └── Start address: 0x2904
+    │  └── Function: 0x79 (write)
+    └── Address: 0x01 (battery #1)
+
+RX: 01 79 29 04 29 06 00 00 [CRC]  (acknowledgment)
+```
+
+### Sleep Mode (0x2908)
+
+| Value | Description |
+|-------|-------------|
+| 0xA501 | Standby sleep |
+| 0xA502 | Deep sleep |
+
 ## References
 
 - [DIY Solar Forum - Ecoworthy Thread](https://diysolarforum.com/threads/eco-worthy-48v-100ah-5120wh-lifepo4-server-rack-battery.92299/)

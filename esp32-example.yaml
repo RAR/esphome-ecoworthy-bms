@@ -384,7 +384,7 @@ switch:
     discharging:
       name: "${name} discharging"
 
-# Sleep Mode Buttons
+# Sleep Mode and Emergency Buttons
 button:
   - platform: ecoworthy_bms
     ecoworthy_bms_id: bms0
@@ -392,3 +392,6 @@ button:
       name: "${name} standby sleep"
     deep_sleep:
       name: "${name} deep sleep"
+    # WARNING: This will immediately disconnect the battery!
+    trip:
+      name: "${name} trip breaker"

@@ -310,14 +310,17 @@ For multi-battery setups, **all Pack Status data** is available for each slave b
 
 > ⚠️ **Warning:** Disabling MOSFETs will disconnect the battery from the load/charger. Use with caution!
 
-### Buttons (Sleep Control)
+### Buttons (Sleep and Emergency Control)
 
 | Button | Description |
 |--------|-------------|
 | `standby_sleep` | Put BMS into standby sleep mode |
 | `deep_sleep` | Put BMS into deep sleep mode |
+| `trip` | **Emergency disconnect** - trips the breaker on the battery |
 
 > ⚠️ **Warning:** Deep sleep mode requires physical button press or charger connection to wake the BMS!
+
+> 🚨 **DANGER:** The `trip` button will immediately disconnect the battery! This is an emergency function and should only be used when you need to immediately isolate the battery. The battery may need to be manually reset after tripping.
 
 ## Protocol Information
 

@@ -35,6 +35,7 @@ static const uint16_t REG_PROTECTION_PARAMS_END = 0x1900;
 // Write addresses
 static const uint16_t REG_MOS_CONTROL = 0x2902;
 static const uint16_t REG_SLEEP_MODE = 0x2908;
+static const uint16_t REG_DRY_CONTACT = 0x2904;  // Dry contact / trip control
 
 void EcoworthyBms::dump_config() {
   ESP_LOGCONFIG(TAG, "Ecoworthy BMS:");
@@ -989,6 +990,17 @@ void EcoworthyBms::set_sleep_mode(uint8_t mode) {
   this->send_write(REG_SLEEP_MODE, REG_SLEEP_MODE, data);
 }
 
+void EcoworthyBms::trip_breaker() {
+  // Dry contact control register (0x2904-0x2906)
+  // Bitmask: bit 0 = dry contact 1, bit 1 = dry contact 2, bit 2 = ADDR OUT, bit 3 = TRIP
+  // Value 0x0008 = trip the breaker
+  ESP_LOGW(TAG, "TRIPPING BREAKER - emergency disconnect!");
+  
+  // The command uses identifier 0x26 'J' 'B' 'D' (variant) instead of 0x11 'J' 'B' 'D'
+  std::vector<uint8_t> data = {0x00, 0x08};  // Trip bit (bit 3) set
+  this->send_write(REG_DRY_CONTACT, REG_DRY_CONTACT + 2, data);
+}
+
 // Switch implementations (JK-BMS naming convention)
 void ChargingSwitch::write_state(bool state) {
   if (this->parent_ != nullptr) {
@@ -1014,6 +1026,12 @@ void StandbySleepButton::press_action() {
 void DeepSleepButton::press_action() {
   if (this->parent_ != nullptr) {
     this->parent_->set_sleep_mode(2);  // Deep sleep
+  }
+}
+
+void TripButton::press_action() {
+  if (this->parent_ != nullptr) {
+    this->parent_->trip_breaker();
   }
 }
 

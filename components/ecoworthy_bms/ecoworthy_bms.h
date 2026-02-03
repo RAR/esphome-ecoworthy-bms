@@ -47,6 +47,14 @@ class DeepSleepButton : public button::Button, public Component {
   EcoworthyBms *parent_;
 };
 
+class TripButton : public button::Button, public Component {
+ public:
+  void set_parent(EcoworthyBms *parent) { this->parent_ = parent; }
+  void press_action() override;
+ protected:
+  EcoworthyBms *parent_;
+};
+
 // Structure to hold per-battery sensors for slave batteries
 struct SlaveBatterySensors {
   // Voltage sensors
@@ -248,9 +256,10 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_charging_switch(ChargingSwitch *s) { charging_switch_ = s; }
   void set_discharging_switch(DischargingSwitch *s) { discharging_switch_ = s; }
 
-  // Buttons for sleep modes
+  // Buttons for sleep modes and trip
   void set_standby_sleep_button(StandbySleepButton *b) { standby_sleep_button_ = b; }
   void set_deep_sleep_button(DeepSleepButton *b) { deep_sleep_button_ = b; }
+  void set_trip_button(TripButton *b) { trip_button_ = b; }
 
   void on_modbus_data(const std::vector<uint8_t> &data) override;
 
@@ -262,6 +271,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_charge_mos(bool state);
   void set_discharge_mos(bool state);
   void set_sleep_mode(uint8_t mode);  // 0xA501 = standby, 0xA502 = deep
+  void trip_breaker();  // Emergency disconnect
 
   // Current MOS state (for switches)
   bool get_charge_mos_state() const { return charge_mos_state_; }
@@ -371,6 +381,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   // Buttons
   StandbySleepButton *standby_sleep_button_{nullptr};
   DeepSleepButton *deep_sleep_button_{nullptr};
+  TripButton *trip_button_{nullptr};
 
   struct Cell {
     sensor::Sensor *cell_voltage_sensor_{nullptr};
