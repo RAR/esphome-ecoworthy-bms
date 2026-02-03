@@ -16,10 +16,12 @@ DEPENDENCIES = ["ecoworthy_bms"]
 StandbySleepButton = ecoworthy_bms_ns.class_("StandbySleepButton", button.Button, cg.Component)
 DeepSleepButton = ecoworthy_bms_ns.class_("DeepSleepButton", button.Button, cg.Component)
 TripButton = ecoworthy_bms_ns.class_("TripButton", button.Button, cg.Component)
+TripAllButton = ecoworthy_bms_ns.class_("TripAllButton", button.Button, cg.Component)
 
 CONF_STANDBY_SLEEP = "standby_sleep"
 CONF_DEEP_SLEEP = "deep_sleep"
 CONF_TRIP = "trip"
+CONF_TRIP_ALL = "trip_all"
 
 CONFIG_SCHEMA = cv.Schema(
     {
@@ -38,6 +40,11 @@ CONFIG_SCHEMA = cv.Schema(
             TripButton,
             entity_category=ENTITY_CATEGORY_CONFIG,
             icon="mdi:alert-octagon",
+        ),
+        cv.Optional(CONF_TRIP_ALL): button.button_schema(
+            TripAllButton,
+            entity_category=ENTITY_CATEGORY_CONFIG,
+            icon="mdi:alert-octagon-outline",
         ),
     }
 )
@@ -63,3 +70,9 @@ async def to_code(config):
         await cg.register_component(b, config[CONF_TRIP])
         cg.add(b.set_parent(hub))
         cg.add(hub.set_trip_button(b))
+
+    if CONF_TRIP_ALL in config:
+        b = await button.new_button(config[CONF_TRIP_ALL])
+        await cg.register_component(b, config[CONF_TRIP_ALL])
+        cg.add(b.set_parent(hub))
+        cg.add(hub.set_trip_all_button(b))

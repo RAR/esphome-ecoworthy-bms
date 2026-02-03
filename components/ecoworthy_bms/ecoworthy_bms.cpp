@@ -1001,6 +1001,16 @@ void EcoworthyBms::trip_breaker() {
   this->send_write(REG_DRY_CONTACT, REG_DRY_CONTACT + 2, data);
 }
 
+void EcoworthyBms::trip_breaker_all() {
+  // Same as trip_breaker but sends to broadcast address 0xFF
+  // This should trip all batteries in the system
+  ESP_LOGW(TAG, "TRIPPING ALL BREAKERS - broadcast emergency disconnect!");
+  
+  std::vector<uint8_t> data = {0x00, 0x08};  // Trip bit (bit 3) set
+  // Use parent_->send_write with explicit broadcast address 0xFF
+  this->parent_->send_write(0xFF, REG_DRY_CONTACT, REG_DRY_CONTACT + 2, data);
+}
+
 // Switch implementations (JK-BMS naming convention)
 void ChargingSwitch::write_state(bool state) {
   if (this->parent_ != nullptr) {
@@ -1032,6 +1042,12 @@ void DeepSleepButton::press_action() {
 void TripButton::press_action() {
   if (this->parent_ != nullptr) {
     this->parent_->trip_breaker();
+  }
+}
+
+void TripAllButton::press_action() {
+  if (this->parent_ != nullptr) {
+    this->parent_->trip_breaker_all();
   }
 }
 

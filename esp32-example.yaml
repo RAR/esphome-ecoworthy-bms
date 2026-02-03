@@ -395,3 +395,6 @@ button:
     # WARNING: This will immediately disconnect the battery!
     trip:
       name: "${name} trip breaker"
+    # WARNING: Broadcasts to ALL batteries (address 0xFF) - may trip entire bank!
+    trip_all:
+      name: "${name} trip all breakers"
