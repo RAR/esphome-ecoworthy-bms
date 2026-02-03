@@ -263,6 +263,14 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 | `configured_dcl` | A | Configured discharge current limit |
 | `shunt_resistance` | μΩ | Current shunt resistance |
 | `hardware_version` | - | Hardware version |
+| `cell_ovp_trigger` | V | Cell over-voltage protection trigger threshold |
+| `cell_ovp_release` | V | Cell over-voltage protection release threshold |
+| `cell_uvp_trigger` | V | Cell under-voltage protection trigger threshold |
+| `cell_uvp_release` | V | Cell under-voltage protection release threshold |
+| `pack_ovp_trigger` | V | Pack over-voltage protection trigger threshold |
+| `pack_ovp_release` | V | Pack over-voltage protection release threshold |
+| `pack_uvp_trigger` | V | Pack under-voltage protection trigger threshold |
+| `pack_uvp_release` | V | Pack under-voltage protection release threshold |
 
 ### Slave Battery Sensors
 

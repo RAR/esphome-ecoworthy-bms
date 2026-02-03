@@ -28,6 +28,10 @@ static const uint16_t REG_CONFIG_2000_END = 0x2050;
 static const uint16_t REG_PRODUCT_INFO_START = 0x2810;
 static const uint16_t REG_PRODUCT_INFO_END = 0x283C;
 
+// Protection Parameters: 0x1800 - 0x1900
+static const uint16_t REG_PROTECTION_PARAMS_START = 0x1800;
+static const uint16_t REG_PROTECTION_PARAMS_END = 0x1900;
+
 // Write addresses
 static const uint16_t REG_MOS_CONTROL = 0x2902;
 static const uint16_t REG_SLEEP_MODE = 0x2908;
@@ -101,9 +105,15 @@ void EcoworthyBms::update() {
           this->send(FUNCTION_READ, REG_PRODUCT_INFO_START, REG_PRODUCT_INFO_END);
         }
         break;
+      case 3:
+        // Request protection parameters (every 30th update)
+        if ((this->update_counter_ % 30) == 0) {
+          this->send(FUNCTION_READ, REG_PROTECTION_PARAMS_START, REG_PROTECTION_PARAMS_END);
+        }
+        break;
     }
     
-    this->request_step_ = (this->request_step_ + 1) % 3;
+    this->request_step_ = (this->request_step_ + 1) % 4;
     this->current_battery_index_ = 0;  // Reset for next update cycle
     this->update_counter_++;
   }
@@ -166,6 +176,10 @@ void EcoworthyBms::on_modbus_data(const std::vector<uint8_t> &data) {
   } else if (start_addr == REG_PRODUCT_INFO_START) {
     if (battery_index == 0) {
       this->on_product_info_data_(data);
+    }
+  } else if (start_addr == REG_PROTECTION_PARAMS_START) {
+    if (battery_index == 0) {
+      this->on_protection_params_data_(data);
     }
   }
 }
@@ -875,6 +889,67 @@ void EcoworthyBms::on_product_info_data_(const std::vector<uint8_t> &data) {
     size_t end = model.find('\0');
     if (end != std::string::npos) model = model.substr(0, end);
     this->publish_state_(this->bms_model_text_sensor_, model);
+  }
+}
+
+// Protection parameters (0x1800) parsing
+void EcoworthyBms::on_protection_params_data_(const std::vector<uint8_t> &data) {
+  const uint8_t *payload = &data[8];
+  size_t data_length = (uint16_t(data[6]) << 8) | uint16_t(data[7]);
+
+  auto get_16bit = [&](size_t i) -> uint16_t {
+    if (i + 1 >= data_length) return 0;
+    return (uint16_t(payload[i]) << 8) | uint16_t(payload[i + 1]);
+  };
+
+  ESP_LOGV(TAG, "Processing %d bytes of protection params data", data_length);
+
+  // The 0x1800 block contains protection thresholds
+  // Based on reverse engineering, the layout appears to be:
+  // Offset 0: Cell OVP trigger (mV)
+  // Offset 2: Cell OVP release (mV)
+  // Offset 4: Unknown
+  // Offset 6: Cell OVP hard limit (mV)
+  // ...
+  // Offset 12: Cell UVP trigger (mV)
+  // Offset 14: Cell UVP release (mV)
+  // ...
+  // Offset 24: Pack OVP trigger (cV, divide by 100 for V)
+  // Offset 26: Pack OVP release (cV)
+  // ...
+  // Offset 36: Pack UVP trigger (cV)
+  // Offset 38: Pack UVP release (cV)
+
+  if (data_length >= 40) {
+    // Cell voltage protection thresholds (in mV, publish as V)
+    float cell_ovp_trigger = get_16bit(0) / 1000.0f;  // mV to V
+    float cell_ovp_release = get_16bit(2) / 1000.0f;
+    float cell_uvp_trigger = get_16bit(12) / 1000.0f;
+    float cell_uvp_release = get_16bit(14) / 1000.0f;
+    
+    this->publish_state_(this->cell_ovp_trigger_sensor_, cell_ovp_trigger);
+    this->publish_state_(this->cell_ovp_release_sensor_, cell_ovp_release);
+    this->publish_state_(this->cell_uvp_trigger_sensor_, cell_uvp_trigger);
+    this->publish_state_(this->cell_uvp_release_sensor_, cell_uvp_release);
+
+    ESP_LOGD(TAG, "Cell OVP: trigger=%.3fV, release=%.3fV", cell_ovp_trigger, cell_ovp_release);
+    ESP_LOGD(TAG, "Cell UVP: trigger=%.3fV, release=%.3fV", cell_uvp_trigger, cell_uvp_release);
+  }
+
+  if (data_length >= 40) {
+    // Pack voltage protection thresholds (in cV, publish as V)
+    float pack_ovp_trigger = get_16bit(24) / 100.0f;  // cV to V
+    float pack_ovp_release = get_16bit(26) / 100.0f;
+    float pack_uvp_trigger = get_16bit(36) / 100.0f;
+    float pack_uvp_release = get_16bit(38) / 100.0f;
+    
+    this->publish_state_(this->pack_ovp_trigger_sensor_, pack_ovp_trigger);
+    this->publish_state_(this->pack_ovp_release_sensor_, pack_ovp_release);
+    this->publish_state_(this->pack_uvp_trigger_sensor_, pack_uvp_trigger);
+    this->publish_state_(this->pack_uvp_release_sensor_, pack_uvp_release);
+
+    ESP_LOGD(TAG, "Pack OVP: trigger=%.2fV, release=%.2fV", pack_ovp_trigger, pack_ovp_release);
+    ESP_LOGD(TAG, "Pack UVP: trigger=%.2fV, release=%.2fV", pack_uvp_trigger, pack_uvp_release);
   }
 }
 

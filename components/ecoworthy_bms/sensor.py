@@ -106,6 +106,16 @@ CONF_CONFIGURED_DVL = "configured_dvl"
 CONF_CONFIGURED_DCL = "configured_dcl"
 CONF_SHUNT_RESISTANCE = "shunt_resistance"
 
+# Protection parameter sensors (from 0x1800 block)
+CONF_CELL_OVP_TRIGGER = "cell_ovp_trigger"
+CONF_CELL_OVP_RELEASE = "cell_ovp_release"
+CONF_CELL_UVP_TRIGGER = "cell_uvp_trigger"
+CONF_CELL_UVP_RELEASE = "cell_uvp_release"
+CONF_PACK_OVP_TRIGGER = "pack_ovp_trigger"
+CONF_PACK_OVP_RELEASE = "pack_ovp_release"
+CONF_PACK_UVP_TRIGGER = "pack_uvp_trigger"
+CONF_PACK_UVP_RELEASE = "pack_uvp_release"
+
 UNIT_AMPERE_HOURS = "Ah"
 UNIT_MINUTES = "min"
 UNIT_MICROOHM = "μΩ"
@@ -501,6 +511,63 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             state_class=STATE_CLASS_MEASUREMENT,
             icon="mdi:resistor",
         ),
+        # Protection parameter sensors (from 0x1800 block)
+        cv.Optional(CONF_CELL_OVP_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
+        cv.Optional(CONF_CELL_OVP_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
+        cv.Optional(CONF_CELL_UVP_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
+        cv.Optional(CONF_CELL_UVP_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=3,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
+        cv.Optional(CONF_PACK_OVP_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
+        cv.Optional(CONF_PACK_OVP_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
+        cv.Optional(CONF_PACK_UVP_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
+        cv.Optional(CONF_PACK_UVP_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:flash-triangle-outline",
+        ),
         # Per-battery sensors for slave batteries (battery_2, battery_3, etc.)
         # Use battery index as key (2-16)
         cv.Optional(CONF_BATTERIES): cv.Schema({
@@ -721,6 +788,39 @@ async def to_code(config):
     if CONF_SHUNT_RESISTANCE in config:
         sens = await sensor.new_sensor(config[CONF_SHUNT_RESISTANCE])
         cg.add(hub.set_shunt_resistance_sensor(sens))
+
+    # Protection parameter sensors (from 0x1800 block)
+    if CONF_CELL_OVP_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_CELL_OVP_TRIGGER])
+        cg.add(hub.set_cell_ovp_trigger_sensor(sens))
+
+    if CONF_CELL_OVP_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_CELL_OVP_RELEASE])
+        cg.add(hub.set_cell_ovp_release_sensor(sens))
+
+    if CONF_CELL_UVP_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_CELL_UVP_TRIGGER])
+        cg.add(hub.set_cell_uvp_trigger_sensor(sens))
+
+    if CONF_CELL_UVP_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_CELL_UVP_RELEASE])
+        cg.add(hub.set_cell_uvp_release_sensor(sens))
+
+    if CONF_PACK_OVP_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_PACK_OVP_TRIGGER])
+        cg.add(hub.set_pack_ovp_trigger_sensor(sens))
+
+    if CONF_PACK_OVP_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_PACK_OVP_RELEASE])
+        cg.add(hub.set_pack_ovp_release_sensor(sens))
+
+    if CONF_PACK_UVP_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_PACK_UVP_TRIGGER])
+        cg.add(hub.set_pack_uvp_trigger_sensor(sens))
+
+    if CONF_PACK_UVP_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_PACK_UVP_RELEASE])
+        cg.add(hub.set_pack_uvp_release_sensor(sens))
 
     # Per-battery sensors for slave batteries
     if CONF_BATTERIES in config:

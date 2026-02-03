@@ -238,6 +238,25 @@ sensor:
     configured_dcl:
       name: "${name} configured DCL"
 
+    # Protection threshold sensors (from 0x1800 block - master only)
+    # These show the configured OVP/UVP protection thresholds
+    cell_ovp_trigger:
+      name: "${name} cell OVP trigger"
+    cell_ovp_release:
+      name: "${name} cell OVP release"
+    cell_uvp_trigger:
+      name: "${name} cell UVP trigger"
+    cell_uvp_release:
+      name: "${name} cell UVP release"
+    pack_ovp_trigger:
+      name: "${name} pack OVP trigger"
+    pack_ovp_release:
+      name: "${name} pack OVP release"
+    pack_uvp_trigger:
+      name: "${name} pack UVP trigger"
+    pack_uvp_release:
+      name: "${name} pack UVP release"
+
     # Uncomment below to add slave battery sensors (requires battery_count >= 2)
     # All Pack Status sensors are available for slaves (same as master except config blocks)
     # batteries:

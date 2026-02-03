@@ -147,6 +147,44 @@ This document describes the Modbus-RTU register map for Ecoworthy and JBD UP16S 
 | 6 | Dry contact 2 |
 | 7 | Limiting |
 
+## Protection Parameters (0x1800 - 0x1900)
+
+The protection parameters block contains voltage and current protection thresholds. This block is 208 bytes and is only available from the master battery.
+
+| Offset | Size | Description | Unit/Formula |
+|--------|------|-------------|--------------|
+| 0 | 2 | Cell OVP trigger | V = val / 1000 (mV) |
+| 2 | 2 | Cell OVP release | V = val / 1000 (mV) |
+| 4 | 2 | Unknown | - |
+| 6 | 2 | Cell OVP hard limit | V = val / 1000 (mV) |
+| 8 | 2 | Unknown | - |
+| 10 | 2 | Unknown | - |
+| 12 | 2 | Cell UVP trigger | V = val / 1000 (mV) |
+| 14 | 2 | Cell UVP release | V = val / 1000 (mV) |
+| 16 | 2 | Unknown | - |
+| 18 | 2 | Cell UVP hard limit | V = val / 1000 (mV) |
+| 20 | 2 | Unknown | - |
+| 22 | 2 | Unknown | - |
+| 24 | 2 | Pack OVP trigger | V = val / 100 (cV) |
+| 26 | 2 | Pack OVP release | V = val / 100 (cV) |
+| 28 | 2 | Unknown | - |
+| 30 | 2 | Pack OVP hard limit | V = val / 100 (cV) |
+| 32 | 2 | Unknown | - |
+| 34 | 2 | Unknown | - |
+| 36 | 2 | Pack UVP trigger | V = val / 100 (cV) |
+| 38 | 2 | Pack UVP release | V = val / 100 (cV) |
+| ... | ... | Additional protection parameters | ... |
+
+**Example values for 16S LiFePO4:**
+- Cell OVP trigger: 3.600V (0x0E10 = 3600mV)
+- Cell OVP release: 3.400V (0x0D48 = 3400mV)
+- Cell UVP trigger: 2.700V (0x0A8C = 2700mV)
+- Cell UVP release: 2.900V (0x0B54 = 2900mV)
+- Pack OVP trigger: 57.60V (0x1680 = 5760cV)
+- Pack OVP release: 54.40V (0x1540 = 5440cV)
+- Pack UVP trigger: 42.00V (0x1068 = 4200cV)
+- Pack UVP release: 48.00V (0x12C0 = 4800cV)
+
 ## References
 
 - [DIY Solar Forum - Ecoworthy Thread](https://diysolarforum.com/threads/eco-worthy-48v-100ah-5120wh-lifepo4-server-rack-battery.92299/)

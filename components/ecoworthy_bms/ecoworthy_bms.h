@@ -219,6 +219,16 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_configured_dcl_sensor(sensor::Sensor *s) { configured_dcl_sensor_ = s; }
   void set_shunt_resistance_sensor(sensor::Sensor *s) { shunt_resistance_sensor_ = s; }
 
+  // Protection parameter sensors (from 0x1800 block)
+  void set_cell_ovp_trigger_sensor(sensor::Sensor *s) { cell_ovp_trigger_sensor_ = s; }
+  void set_cell_ovp_release_sensor(sensor::Sensor *s) { cell_ovp_release_sensor_ = s; }
+  void set_cell_uvp_trigger_sensor(sensor::Sensor *s) { cell_uvp_trigger_sensor_ = s; }
+  void set_cell_uvp_release_sensor(sensor::Sensor *s) { cell_uvp_release_sensor_ = s; }
+  void set_pack_ovp_trigger_sensor(sensor::Sensor *s) { pack_ovp_trigger_sensor_ = s; }
+  void set_pack_ovp_release_sensor(sensor::Sensor *s) { pack_ovp_release_sensor_ = s; }
+  void set_pack_uvp_trigger_sensor(sensor::Sensor *s) { pack_uvp_trigger_sensor_ = s; }
+  void set_pack_uvp_release_sensor(sensor::Sensor *s) { pack_uvp_release_sensor_ = s; }
+
   // Text sensors
   void set_operation_status_text_sensor(text_sensor::TextSensor *operation_status) { operation_status_text_sensor_ = operation_status; }
   void set_fault_text_sensor(text_sensor::TextSensor *fault) { fault_text_sensor_ = fault; }
@@ -312,6 +322,16 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *mosfet_status_bitmask_sensor_{nullptr};
   sensor::Sensor *balancing_bitmask_sensor_{nullptr};
 
+  // Protection parameter sensors (from 0x1800 block)
+  sensor::Sensor *cell_ovp_trigger_sensor_{nullptr};
+  sensor::Sensor *cell_ovp_release_sensor_{nullptr};
+  sensor::Sensor *cell_uvp_trigger_sensor_{nullptr};
+  sensor::Sensor *cell_uvp_release_sensor_{nullptr};
+  sensor::Sensor *pack_ovp_trigger_sensor_{nullptr};
+  sensor::Sensor *pack_ovp_release_sensor_{nullptr};
+  sensor::Sensor *pack_uvp_trigger_sensor_{nullptr};
+  sensor::Sensor *pack_uvp_release_sensor_{nullptr};
+
   // Configuration sensors
   sensor::Sensor *balance_voltage_sensor_{nullptr};
   sensor::Sensor *balance_difference_sensor_{nullptr};
@@ -381,6 +401,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void on_config_1c00_data_(const std::vector<uint8_t> &data);
   void on_config_2000_data_(const std::vector<uint8_t> &data);
   void on_product_info_data_(const std::vector<uint8_t> &data);
+  void on_protection_params_data_(const std::vector<uint8_t> &data);
   
   void reset_online_status_tracker_();
   void reset_online_status_tracker_(uint8_t battery_index);
