@@ -727,19 +727,27 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
   this->publish_state_(this->balance_difference_sensor_, balance_diff);
 
   // Offset 4: Heater start temp °C = (val - 500) / 10
-  float heater_start = (get_16bit(4) - 500) / 10.0f;
+  uint16_t raw_heater_start = get_16bit(4);
+  float heater_start = (raw_heater_start - 500) / 10.0f;
+  ESP_LOGD(TAG, "Heater start: raw=%u, value=%.1f°C", raw_heater_start, heater_start);
   this->publish_state_(this->heater_start_temp_sensor_, heater_start);
 
   // Offset 6: Heater stop temp °C = (val - 500) / 10
-  float heater_stop = (get_16bit(6) - 500) / 10.0f;
+  uint16_t raw_heater_stop = get_16bit(6);
+  float heater_stop = (raw_heater_stop - 500) / 10.0f;
+  ESP_LOGD(TAG, "Heater stop: raw=%u, value=%.1f°C", raw_heater_stop, heater_stop);
   this->publish_state_(this->heater_stop_temp_sensor_, heater_stop);
 
   // Offset 8: Full charge voltage V = val / 100
-  float full_chg_v = get_16bit(8) / 100.0f;
+  uint16_t raw_full_chg_v = get_16bit(8);
+  float full_chg_v = raw_full_chg_v / 100.0f;
+  ESP_LOGD(TAG, "Full charge voltage: raw=%u, value=%.2fV", raw_full_chg_v, full_chg_v);
   this->publish_state_(this->full_charge_voltage_sensor_, full_chg_v);
 
   // Offset 10: Full charge current A = val / 10
-  float full_chg_a = get_16bit(10) / 10.0f;
+  uint16_t raw_full_chg_a = get_16bit(10);
+  float full_chg_a = raw_full_chg_a / 10.0f;
+  ESP_LOGD(TAG, "Full charge current: raw=%u, value=%.1fA", raw_full_chg_a, full_chg_a);
   this->publish_state_(this->full_charge_current_sensor_, full_chg_a);
 
   // Offset 12-27: BMS SN code (16 bytes)
@@ -747,6 +755,7 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
     std::string bms_sn((char *)&payload[12], 16);
     size_t end = bms_sn.find('\0');
     if (end != std::string::npos) bms_sn = bms_sn.substr(0, end);
+    ESP_LOGD(TAG, "BMS SN: '%s'", bms_sn.c_str());
     this->publish_state_(this->bms_serial_number_text_sensor_, bms_sn);
   }
 
@@ -755,6 +764,7 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
     std::string pack_sn((char *)&payload[28], 16);
     size_t end = pack_sn.find('\0');
     if (end != std::string::npos) pack_sn = pack_sn.substr(0, end);
+    ESP_LOGD(TAG, "Pack SN: '%s'", pack_sn.c_str());
     this->publish_state_(this->pack_serial_number_text_sensor_, pack_sn);
   }
 
@@ -763,30 +773,36 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
     std::string manufacturer((char *)&payload[44], 16);
     size_t end = manufacturer.find('\0');
     if (end != std::string::npos) manufacturer = manufacturer.substr(0, end);
+    ESP_LOGD(TAG, "Manufacturer: '%s'", manufacturer.c_str());
     this->publish_state_(this->manufacturer_text_sensor_, manufacturer);
   }
 
   // Offset 60: CAN protocol (0: PYLON, 1: SMA, 2: Victron, 3: Growatt, etc.)
   if (data_length >= 62) {
     uint16_t can_proto = get_16bit(60);
+    ESP_LOGD(TAG, "CAN protocol: raw=%u", can_proto);
     this->publish_state_(this->can_protocol_text_sensor_, this->decode_can_protocol_(can_proto));
   }
 
   // Offset 62: RS485 protocol
   if (data_length >= 64) {
     uint16_t rs485_proto = get_16bit(62);
+    ESP_LOGD(TAG, "RS485 protocol: raw=%u", rs485_proto);
     this->publish_state_(this->rs485_protocol_text_sensor_, this->decode_rs485_protocol_(rs485_proto));
   }
 
   // Offset 64: Sleep voltage V = val / 100
   if (data_length >= 66) {
-    float sleep_v = get_16bit(64) / 100.0f;
+    uint16_t raw_sleep_v = get_16bit(64);
+    float sleep_v = raw_sleep_v / 100.0f;
+    ESP_LOGD(TAG, "Sleep voltage: raw=%u, value=%.2fV", raw_sleep_v, sleep_v);
     this->publish_state_(this->sleep_voltage_sensor_, sleep_v);
   }
 
   // Offset 66: Sleep delay (minutes)
   if (data_length >= 68) {
-    float sleep_delay = get_16bit(66);
+    uint16_t sleep_delay = get_16bit(66);
+    ESP_LOGD(TAG, "Sleep delay: %u min", sleep_delay);
     this->publish_state_(this->sleep_delay_sensor_, sleep_delay);
   }
 
