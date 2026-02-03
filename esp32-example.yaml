@@ -72,6 +72,7 @@ binary_sensor:
     balancing:
       name: "${name} balancing"
     # Uncomment below to add slave battery binary sensors (requires battery_count >= 2)
+    # All Pack Status binary sensors are available for slaves
     # batteries:
     #   2:
     #     online_status:
@@ -80,6 +81,12 @@ binary_sensor:
     #       name: "${name} battery 2 charging"
     #     discharging:
     #       name: "${name} battery 2 discharging"
+    #     charging_switch:
+    #       name: "${name} battery 2 charging switch"
+    #     discharging_switch:
+    #       name: "${name} battery 2 discharging switch"
+    #     balancing:
+    #       name: "${name} battery 2 balancing"
 
 sensor:
   - platform: ecoworthy_bms
@@ -232,30 +239,74 @@ sensor:
       name: "${name} configured DCL"
 
     # Uncomment below to add slave battery sensors (requires battery_count >= 2)
+    # All Pack Status sensors are available for slaves (same as master except config blocks)
     # batteries:
     #   2:
+    #     # Basic monitoring
     #     total_voltage:
     #       name: "${name} battery 2 voltage"
     #     current:
     #       name: "${name} battery 2 current"
     #     power:
     #       name: "${name} battery 2 power"
+    #     charging_power:
+    #       name: "${name} battery 2 charging power"
+    #     discharging_power:
+    #       name: "${name} battery 2 discharging power"
     #     state_of_charge:
     #       name: "${name} battery 2 SOC"
     #     state_of_health:
     #       name: "${name} battery 2 SOH"
     #     remaining_capacity:
     #       name: "${name} battery 2 remaining capacity"
-    #     power_tube_temperature:
-    #       name: "${name} battery 2 MOSFET temp"
-    #     ambient_temperature:
-    #       name: "${name} battery 2 ambient temp"
+    #     full_capacity:
+    #       name: "${name} battery 2 full capacity"
+    #     rated_capacity:
+    #       name: "${name} battery 2 rated capacity"
+    #     cycle_count:
+    #       name: "${name} battery 2 cycle count"
+    #     # Cell voltages
     #     min_cell_voltage:
     #       name: "${name} battery 2 min cell voltage"
     #     max_cell_voltage:
     #       name: "${name} battery 2 max cell voltage"
     #     delta_cell_voltage:
     #       name: "${name} battery 2 delta cell voltage"
+    #     average_cell_voltage:
+    #       name: "${name} battery 2 average cell voltage"
+    #     cell_voltage_1:
+    #       name: "${name} battery 2 cell 1"
+    #     # ... cell_voltage_2 through cell_voltage_16 also available
+    #     # Temperature
+    #     power_tube_temperature:
+    #       name: "${name} battery 2 MOSFET temp"
+    #     ambient_temperature:
+    #       name: "${name} battery 2 ambient temp"
+    #     min_temperature:
+    #       name: "${name} battery 2 min temp"
+    #     max_temperature:
+    #       name: "${name} battery 2 max temp"
+    #     avg_temperature:
+    #       name: "${name} battery 2 avg temp"
+    #     temperature_sensor_1:
+    #       name: "${name} battery 2 temp sensor 1"
+    #     # ... temperature_sensor_2 through temperature_sensor_4 also available
+    #     # Limits
+    #     charge_voltage_limit:
+    #       name: "${name} battery 2 CVL"
+    #     charge_current_limit:
+    #       name: "${name} battery 2 CCL"
+    #     discharge_voltage_limit:
+    #       name: "${name} battery 2 DVL"
+    #     discharge_current_limit:
+    #       name: "${name} battery 2 DCL"
+    #     # Status
+    #     cell_count:
+    #       name: "${name} battery 2 cell count"
+    #     fault_bitmask:
+    #       name: "${name} battery 2 fault bitmask"
+    #     alarm_bitmask:
+    #       name: "${name} battery 2 alarm bitmask"
     #   3:
     #     total_voltage:
     #       name: "${name} battery 3 voltage"
@@ -291,6 +342,19 @@ text_sensor:
       name: "${name} RS485 protocol"
     hardware_version:
       name: "${name} hardware version"
+    # Uncomment below to add slave battery text sensors (requires battery_count >= 2)
+    # batteries:
+    #   2:
+    #     operation_status:
+    #       name: "${name} battery 2 operation status"
+    #     fault:
+    #       name: "${name} battery 2 fault"
+    #     alarm:
+    #       name: "${name} battery 2 alarm"
+    #     serial_number:
+    #       name: "${name} battery 2 serial number"
+    #     firmware_version:
+    #       name: "${name} battery 2 firmware version"
 
 # MOS Control Switches (JK-BMS naming convention)
 switch:

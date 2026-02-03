@@ -49,23 +49,67 @@ class DeepSleepButton : public button::Button, public Component {
 
 // Structure to hold per-battery sensors for slave batteries
 struct SlaveBatterySensors {
+  // Voltage sensors
   sensor::Sensor *total_voltage{nullptr};
-  sensor::Sensor *current{nullptr};
-  sensor::Sensor *power{nullptr};
-  sensor::Sensor *state_of_charge{nullptr};
-  sensor::Sensor *state_of_health{nullptr};
-  sensor::Sensor *remaining_capacity{nullptr};
-  sensor::Sensor *power_tube_temperature{nullptr};
-  sensor::Sensor *ambient_temperature{nullptr};
   sensor::Sensor *min_cell_voltage{nullptr};
   sensor::Sensor *max_cell_voltage{nullptr};
   sensor::Sensor *delta_cell_voltage{nullptr};
+  sensor::Sensor *average_cell_voltage{nullptr};
+  sensor::Sensor *min_voltage_cell{nullptr};
+  sensor::Sensor *max_voltage_cell{nullptr};
+  sensor::Sensor *cell_voltages[16]{nullptr};
+  
+  // Current and power
+  sensor::Sensor *current{nullptr};
+  sensor::Sensor *power{nullptr};
+  sensor::Sensor *charging_power{nullptr};
+  sensor::Sensor *discharging_power{nullptr};
+  
+  // Temperature sensors
+  sensor::Sensor *power_tube_temperature{nullptr};
+  sensor::Sensor *ambient_temperature{nullptr};
   sensor::Sensor *min_temperature{nullptr};
   sensor::Sensor *max_temperature{nullptr};
+  sensor::Sensor *avg_temperature{nullptr};
+  sensor::Sensor *temperature_sensors[4]{nullptr};
+  
+  // Capacity
+  sensor::Sensor *state_of_charge{nullptr};
+  sensor::Sensor *state_of_health{nullptr};
+  sensor::Sensor *remaining_capacity{nullptr};
+  sensor::Sensor *full_capacity{nullptr};
+  sensor::Sensor *rated_capacity{nullptr};
+  sensor::Sensor *cycle_count{nullptr};
+  
+  // Limits (dynamic from Pack Status)
+  sensor::Sensor *charge_voltage_limit{nullptr};
+  sensor::Sensor *charge_current_limit{nullptr};
+  sensor::Sensor *discharge_voltage_limit{nullptr};
+  sensor::Sensor *discharge_current_limit{nullptr};
+  
+  // Status
+  sensor::Sensor *cell_count{nullptr};
+  sensor::Sensor *temperature_sensor_count{nullptr};
+  sensor::Sensor *fault_bitmask{nullptr};
+  sensor::Sensor *alarm_bitmask{nullptr};
+  sensor::Sensor *mosfet_status_bitmask{nullptr};
+  sensor::Sensor *balancing_bitmask{nullptr};
+  
+  // Binary sensors
   binary_sensor::BinarySensor *online_status{nullptr};
   binary_sensor::BinarySensor *charging{nullptr};
   binary_sensor::BinarySensor *discharging{nullptr};
+  binary_sensor::BinarySensor *charging_switch{nullptr};
+  binary_sensor::BinarySensor *discharging_switch{nullptr};
+  binary_sensor::BinarySensor *balancing{nullptr};
+  
+  // Text sensors
   text_sensor::TextSensor *operation_status{nullptr};
+  text_sensor::TextSensor *fault{nullptr};
+  text_sensor::TextSensor *alarm{nullptr};
+  text_sensor::TextSensor *serial_number{nullptr};
+  text_sensor::TextSensor *firmware_version{nullptr};
+  
   uint8_t no_response_count{0};
 };
 

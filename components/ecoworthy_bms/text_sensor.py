@@ -21,11 +21,23 @@ CONF_RS485_PROTOCOL = "rs485_protocol"
 CONF_HARDWARE_VERSION = "hardware_version"
 CONF_BATTERIES = "batteries"
 
-# Schema for per-battery text sensors (slaves)
+# Schema for per-battery text sensors (slaves - all text sensors from Pack Status)
 BATTERY_TEXT_SENSOR_SCHEMA = cv.Schema(
     {
         cv.Optional(CONF_OPERATION_STATUS): text_sensor.text_sensor_schema(
             icon="mdi:battery-heart-variant",
+        ),
+        cv.Optional(CONF_FAULT): text_sensor.text_sensor_schema(
+            icon="mdi:alert-circle-outline",
+        ),
+        cv.Optional(CONF_ALARM): text_sensor.text_sensor_schema(
+            icon="mdi:alert-outline",
+        ),
+        cv.Optional(CONF_SERIAL_NUMBER): text_sensor.text_sensor_schema(
+            icon="mdi:identifier",
+        ),
+        cv.Optional(CONF_FIRMWARE_VERSION): text_sensor.text_sensor_schema(
+            icon="mdi:chip",
         ),
     }
 )
@@ -140,3 +152,15 @@ async def to_code(config):
             if CONF_OPERATION_STATUS in battery_config:
                 sens = await text_sensor.new_text_sensor(battery_config[CONF_OPERATION_STATUS])
                 cg.add(hub.set_slave_battery_text_sensor(battery_index, "operation_status", sens))
+            if CONF_FAULT in battery_config:
+                sens = await text_sensor.new_text_sensor(battery_config[CONF_FAULT])
+                cg.add(hub.set_slave_battery_text_sensor(battery_index, "fault", sens))
+            if CONF_ALARM in battery_config:
+                sens = await text_sensor.new_text_sensor(battery_config[CONF_ALARM])
+                cg.add(hub.set_slave_battery_text_sensor(battery_index, "alarm", sens))
+            if CONF_SERIAL_NUMBER in battery_config:
+                sens = await text_sensor.new_text_sensor(battery_config[CONF_SERIAL_NUMBER])
+                cg.add(hub.set_slave_battery_text_sensor(battery_index, "serial_number", sens))
+            if CONF_FIRMWARE_VERSION in battery_config:
+                sens = await text_sensor.new_text_sensor(battery_config[CONF_FIRMWARE_VERSION])
+                cg.add(hub.set_slave_battery_text_sensor(battery_index, "firmware_version", sens))

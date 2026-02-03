@@ -266,13 +266,32 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 
 ### Slave Battery Sensors
 
-For multi-battery setups, the following sensors are available per slave battery:
+For multi-battery setups, **all Pack Status data** is available for each slave battery. The following sensors can be configured per slave:
 
-| Sensor Type | Available Sensors |
-|-------------|-------------------|
-| Sensor | `total_voltage`, `current`, `power`, `state_of_charge`, `state_of_health`, `remaining_capacity`, `power_tube_temperature`, `ambient_temperature`, `min_cell_voltage`, `max_cell_voltage`, `delta_cell_voltage`, `min_temperature`, `max_temperature` |
-| Binary Sensor | `online_status`, `charging`, `discharging` |
-| Text Sensor | `operation_status` |
+#### Slave Sensors
+
+| Category | Available Sensors |
+|----------|-------------------|
+| **Voltage** | `total_voltage`, `min_cell_voltage`, `max_cell_voltage`, `delta_cell_voltage`, `average_cell_voltage`, `min_voltage_cell`, `max_voltage_cell`, `cell_voltage_1` through `cell_voltage_16` |
+| **Current/Power** | `current`, `power`, `charging_power`, `discharging_power` |
+| **Temperature** | `power_tube_temperature`, `ambient_temperature`, `min_temperature`, `max_temperature`, `avg_temperature`, `temperature_sensor_1` through `temperature_sensor_4` |
+| **Capacity** | `state_of_charge`, `state_of_health`, `remaining_capacity`, `full_capacity`, `rated_capacity`, `cycle_count` |
+| **Limits** | `charge_voltage_limit`, `charge_current_limit`, `discharge_voltage_limit`, `discharge_current_limit` |
+| **Status** | `cell_count`, `temperature_sensor_count`, `fault_bitmask`, `alarm_bitmask`, `mosfet_status_bitmask`, `balancing_bitmask` |
+
+#### Slave Binary Sensors
+
+| Available Binary Sensors |
+|-------------------------|
+| `online_status`, `charging`, `discharging`, `charging_switch`, `discharging_switch`, `balancing` |
+
+#### Slave Text Sensors
+
+| Available Text Sensors |
+|-----------------------|
+| `operation_status`, `fault`, `alarm`, `serial_number`, `firmware_version` |
+
+> **Note:** Configuration parameters from 0x1C00, 0x2000, and 0x2810 blocks (e.g., balance settings, manufacturer, BMS model, etc.) are only available for the master battery when using RS485.
 
 ### Switches (MOS Control)
 

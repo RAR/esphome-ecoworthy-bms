@@ -16,7 +16,7 @@ CONF_DISCHARGING_SWITCH = "discharging_switch"
 CONF_BALANCING = "balancing"
 CONF_BATTERIES = "batteries"
 
-# Schema for per-battery binary sensors (slaves)
+# Schema for per-battery binary sensors (slaves - all binary sensors from Pack Status)
 BATTERY_BINARY_SENSOR_SCHEMA = cv.Schema(
     {
         cv.Optional(CONF_ONLINE_STATUS): binary_sensor.binary_sensor_schema(
@@ -27,6 +27,15 @@ BATTERY_BINARY_SENSOR_SCHEMA = cv.Schema(
         ),
         cv.Optional(CONF_DISCHARGING): binary_sensor.binary_sensor_schema(
             icon="mdi:battery-minus",
+        ),
+        cv.Optional(CONF_CHARGING_SWITCH): binary_sensor.binary_sensor_schema(
+            icon="mdi:electric-switch",
+        ),
+        cv.Optional(CONF_DISCHARGING_SWITCH): binary_sensor.binary_sensor_schema(
+            icon="mdi:electric-switch",
+        ),
+        cv.Optional(CONF_BALANCING): binary_sensor.binary_sensor_schema(
+            icon="mdi:scale-balance",
         ),
     }
 )
@@ -98,3 +107,12 @@ async def to_code(config):
             if CONF_DISCHARGING in battery_config:
                 sens = await binary_sensor.new_binary_sensor(battery_config[CONF_DISCHARGING])
                 cg.add(hub.set_slave_battery_binary_sensor(battery_index, "discharging", sens))
+            if CONF_CHARGING_SWITCH in battery_config:
+                sens = await binary_sensor.new_binary_sensor(battery_config[CONF_CHARGING_SWITCH])
+                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "charging_switch", sens))
+            if CONF_DISCHARGING_SWITCH in battery_config:
+                sens = await binary_sensor.new_binary_sensor(battery_config[CONF_DISCHARGING_SWITCH])
+                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "discharging_switch", sens))
+            if CONF_BALANCING in battery_config:
+                sens = await binary_sensor.new_binary_sensor(battery_config[CONF_BALANCING])
+                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "balancing", sens))
