@@ -714,6 +714,21 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
 
   ESP_LOGD(TAG, "Processing %d bytes of config 0x1C00 data", data_length);
 
+  // Hex dump first 80 bytes to analyze structure
+  std::string hex_dump;
+  for (size_t i = 0; i < std::min(data_length, (size_t)80); i++) {
+    char buf[4];
+    snprintf(buf, sizeof(buf), "%02X ", payload[i]);
+    hex_dump += buf;
+    if ((i + 1) % 16 == 0) {
+      ESP_LOGD(TAG, "0x1C00[%02d-%02d]: %s", (int)(i - 15), (int)i, hex_dump.c_str());
+      hex_dump.clear();
+    }
+  }
+  if (!hex_dump.empty()) {
+    ESP_LOGD(TAG, "0x1C00[%02d-..]: %s", (int)((data_length < 80 ? data_length : 80) / 16 * 16), hex_dump.c_str());
+  }
+
   // Offset 0: Balance open voltage (mV)
   uint16_t raw_balance = get_16bit(0);
   float balance_voltage = raw_balance * 0.001f;
