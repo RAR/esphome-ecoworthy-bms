@@ -128,6 +128,21 @@ CONF_DISCHARGE_OT_DELAY = "discharge_ot_delay"
 CONF_DISCHARGE_UT_TRIGGER = "discharge_ut_trigger"
 CONF_DISCHARGE_UT_RELEASE = "discharge_ut_release"
 CONF_DISCHARGE_UT_DELAY = "discharge_ut_delay"
+# Current protection thresholds (from 0x1800 block)
+CONF_CHARGE_OC_ALARM = "charge_oc_alarm"
+CONF_CHARGE_OC_ALARM_DELAY = "charge_oc_alarm_delay"
+CONF_CHARGE_OC_TRIGGER = "charge_oc_trigger"
+CONF_CHARGE_OC_DELAY = "charge_oc_delay"
+CONF_CHARGE_OC_RECOVER_DELAY = "charge_oc_recover_delay"
+CONF_CHARGE_OC2_TRIGGER = "charge_oc2_trigger"
+CONF_CHARGE_OC2_DELAY = "charge_oc2_delay"
+CONF_DISCHARGE_OC_ALARM = "discharge_oc_alarm"
+CONF_DISCHARGE_OC_ALARM_DELAY = "discharge_oc_alarm_delay"
+CONF_DISCHARGE_OC_TRIGGER = "discharge_oc_trigger"
+CONF_DISCHARGE_OC_DELAY = "discharge_oc_delay"
+CONF_DISCHARGE_OC_RECOVER_DELAY = "discharge_oc_recover_delay"
+CONF_DISCHARGE_OC2_TRIGGER = "discharge_oc2_trigger"
+CONF_DISCHARGE_OC2_DELAY = "discharge_oc2_delay"
 
 UNIT_AMPERE_HOURS = "Ah"
 UNIT_MINUTES = "min"
@@ -662,6 +677,97 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             state_class=STATE_CLASS_MEASUREMENT,
             icon="mdi:timer-outline",
         ),
+        # Current protection thresholds (from 0x1800 block)
+        cv.Optional(CONF_CHARGE_OC_ALARM): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
+        cv.Optional(CONF_CHARGE_OC_ALARM_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=1,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_CHARGE_OC_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
+        cv.Optional(CONF_CHARGE_OC_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=1,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_CHARGE_OC_RECOVER_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_CHARGE_OC2_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
+        cv.Optional(CONF_CHARGE_OC2_DELAY): sensor.sensor_schema(
+            unit_of_measurement="ms",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_DISCHARGE_OC_ALARM): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
+        cv.Optional(CONF_DISCHARGE_OC_ALARM_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=1,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_DISCHARGE_OC_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
+        cv.Optional(CONF_DISCHARGE_OC_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=1,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_DISCHARGE_OC_RECOVER_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_DISCHARGE_OC2_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
+        cv.Optional(CONF_DISCHARGE_OC2_DELAY): sensor.sensor_schema(
+            unit_of_measurement="ms",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
         # Per-battery sensors for slave batteries (battery_2, battery_3, etc.)
         # Use battery index as key (2-16)
         cv.Optional(CONF_BATTERIES): cv.Schema({
@@ -953,6 +1059,50 @@ async def to_code(config):
     if CONF_DISCHARGE_UT_DELAY in config:
         sens = await sensor.new_sensor(config[CONF_DISCHARGE_UT_DELAY])
         cg.add(hub.set_discharge_ut_delay_sensor(sens))
+
+    # Current protection thresholds
+    if CONF_CHARGE_OC_ALARM in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OC_ALARM])
+        cg.add(hub.set_charge_oc_alarm_sensor(sens))
+    if CONF_CHARGE_OC_ALARM_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OC_ALARM_DELAY])
+        cg.add(hub.set_charge_oc_alarm_delay_sensor(sens))
+    if CONF_CHARGE_OC_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OC_TRIGGER])
+        cg.add(hub.set_charge_oc_trigger_sensor(sens))
+    if CONF_CHARGE_OC_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OC_DELAY])
+        cg.add(hub.set_charge_oc_delay_sensor(sens))
+    if CONF_CHARGE_OC_RECOVER_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OC_RECOVER_DELAY])
+        cg.add(hub.set_charge_oc_recover_delay_sensor(sens))
+    if CONF_CHARGE_OC2_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OC2_TRIGGER])
+        cg.add(hub.set_charge_oc2_trigger_sensor(sens))
+    if CONF_CHARGE_OC2_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OC2_DELAY])
+        cg.add(hub.set_charge_oc2_delay_sensor(sens))
+    if CONF_DISCHARGE_OC_ALARM in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC_ALARM])
+        cg.add(hub.set_discharge_oc_alarm_sensor(sens))
+    if CONF_DISCHARGE_OC_ALARM_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC_ALARM_DELAY])
+        cg.add(hub.set_discharge_oc_alarm_delay_sensor(sens))
+    if CONF_DISCHARGE_OC_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC_TRIGGER])
+        cg.add(hub.set_discharge_oc_trigger_sensor(sens))
+    if CONF_DISCHARGE_OC_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC_DELAY])
+        cg.add(hub.set_discharge_oc_delay_sensor(sens))
+    if CONF_DISCHARGE_OC_RECOVER_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC_RECOVER_DELAY])
+        cg.add(hub.set_discharge_oc_recover_delay_sensor(sens))
+    if CONF_DISCHARGE_OC2_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC2_TRIGGER])
+        cg.add(hub.set_discharge_oc2_trigger_sensor(sens))
+    if CONF_DISCHARGE_OC2_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC2_DELAY])
+        cg.add(hub.set_discharge_oc2_delay_sensor(sens))
 
     # Per-battery sensors for slave batteries
     if CONF_BATTERIES in config:

@@ -257,6 +257,21 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_discharge_ut_trigger_sensor(sensor::Sensor *s) { discharge_ut_trigger_sensor_ = s; }
   void set_discharge_ut_release_sensor(sensor::Sensor *s) { discharge_ut_release_sensor_ = s; }
   void set_discharge_ut_delay_sensor(sensor::Sensor *s) { discharge_ut_delay_sensor_ = s; }
+  // Current protection sensors
+  void set_charge_oc_alarm_sensor(sensor::Sensor *s) { charge_oc_alarm_sensor_ = s; }
+  void set_charge_oc_alarm_delay_sensor(sensor::Sensor *s) { charge_oc_alarm_delay_sensor_ = s; }
+  void set_charge_oc_trigger_sensor(sensor::Sensor *s) { charge_oc_trigger_sensor_ = s; }
+  void set_charge_oc_delay_sensor(sensor::Sensor *s) { charge_oc_delay_sensor_ = s; }
+  void set_charge_oc_recover_delay_sensor(sensor::Sensor *s) { charge_oc_recover_delay_sensor_ = s; }
+  void set_charge_oc2_trigger_sensor(sensor::Sensor *s) { charge_oc2_trigger_sensor_ = s; }
+  void set_charge_oc2_delay_sensor(sensor::Sensor *s) { charge_oc2_delay_sensor_ = s; }
+  void set_discharge_oc_alarm_sensor(sensor::Sensor *s) { discharge_oc_alarm_sensor_ = s; }
+  void set_discharge_oc_alarm_delay_sensor(sensor::Sensor *s) { discharge_oc_alarm_delay_sensor_ = s; }
+  void set_discharge_oc_trigger_sensor(sensor::Sensor *s) { discharge_oc_trigger_sensor_ = s; }
+  void set_discharge_oc_delay_sensor(sensor::Sensor *s) { discharge_oc_delay_sensor_ = s; }
+  void set_discharge_oc_recover_delay_sensor(sensor::Sensor *s) { discharge_oc_recover_delay_sensor_ = s; }
+  void set_discharge_oc2_trigger_sensor(sensor::Sensor *s) { discharge_oc2_trigger_sensor_ = s; }
+  void set_discharge_oc2_delay_sensor(sensor::Sensor *s) { discharge_oc2_delay_sensor_ = s; }
 
   // Text sensors
   void set_operation_status_text_sensor(text_sensor::TextSensor *operation_status) { operation_status_text_sensor_ = operation_status; }
@@ -377,6 +392,21 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *discharge_ut_trigger_sensor_{nullptr};
   sensor::Sensor *discharge_ut_release_sensor_{nullptr};
   sensor::Sensor *discharge_ut_delay_sensor_{nullptr};
+  // Current protection sensors
+  sensor::Sensor *charge_oc_alarm_sensor_{nullptr};
+  sensor::Sensor *charge_oc_alarm_delay_sensor_{nullptr};
+  sensor::Sensor *charge_oc_trigger_sensor_{nullptr};
+  sensor::Sensor *charge_oc_delay_sensor_{nullptr};
+  sensor::Sensor *charge_oc_recover_delay_sensor_{nullptr};
+  sensor::Sensor *charge_oc2_trigger_sensor_{nullptr};
+  sensor::Sensor *charge_oc2_delay_sensor_{nullptr};
+  sensor::Sensor *discharge_oc_alarm_sensor_{nullptr};
+  sensor::Sensor *discharge_oc_alarm_delay_sensor_{nullptr};
+  sensor::Sensor *discharge_oc_trigger_sensor_{nullptr};
+  sensor::Sensor *discharge_oc_delay_sensor_{nullptr};
+  sensor::Sensor *discharge_oc_recover_delay_sensor_{nullptr};
+  sensor::Sensor *discharge_oc2_trigger_sensor_{nullptr};
+  sensor::Sensor *discharge_oc2_delay_sensor_{nullptr};
 
   // Configuration sensors
   sensor::Sensor *balance_voltage_sensor_{nullptr};

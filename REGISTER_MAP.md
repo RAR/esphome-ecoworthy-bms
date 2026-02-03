@@ -151,68 +151,114 @@ This document describes the Modbus-RTU register map for Ecoworthy and JBD UP16S 
 
 The protection parameters block contains voltage, current, and temperature protection thresholds. This block is 208 bytes and is only available from the master battery.
 
-### Voltage Protection (Offsets 0-39)
+### Voltage Protection (Offsets 0-47)
 
-| Offset | Size | Description | Unit/Formula |
-|--------|------|-------------|--------------|
-| 0 | 2 | Cell OVP trigger | V = val / 1000 (mV) |
-| 2 | 2 | Cell OVP release | V = val / 1000 (mV) |
-| 4 | 2 | Cell OVP delay | ms |
-| 6 | 2 | Cell OVP hard limit | V = val / 1000 (mV) |
-| 8 | 2 | Unknown | - |
-| 10 | 2 | Unknown | - |
-| 12 | 2 | Cell UVP trigger | V = val / 1000 (mV) |
-| 14 | 2 | Cell UVP release | V = val / 1000 (mV) |
-| 16 | 2 | Cell UVP delay | ms |
-| 18 | 2 | Cell UVP hard limit | V = val / 1000 (mV) |
-| 20 | 2 | Unknown | - |
-| 22 | 2 | Unknown | - |
-| 24 | 2 | Pack OVP trigger | V = val / 100 (cV) |
-| 26 | 2 | Pack OVP release | V = val / 100 (cV) |
-| 28 | 2 | Pack OVP delay | ms |
-| 30 | 2 | Pack OVP hard limit | V = val / 100 (cV) |
-| 32 | 2 | Unknown | - |
-| 34 | 2 | Unknown | - |
-| 36 | 2 | Pack UVP trigger | V = val / 100 (cV) |
-| 38 | 2 | Pack UVP release | V = val / 100 (cV) |
+Cell and pack voltage protection thresholds. Windows app CSV codes shown in parentheses.
 
-### Temperature Protection (Offsets 94-135)
+| Offset | Size | Description | CSV | Unit/Formula |
+|--------|------|-------------|-----|--------------|
+| 0 | 2 | Cell OVP alarm | a1 | V = val / 1000 (mV) |
+| 2 | 2 | Cell OVP alarm release | a2 | V = val / 1000 (mV) |
+| 4 | 2 | Cell OVP alarm delay | a3 | ms |
+| 6 | 2 | Cell OVP protect (L1) | a4 | V = val / 1000 (mV) |
+| 8 | 2 | Cell OVP protect release | a5 | V = val / 1000 (mV) |
+| 10 | 2 | Cell OVP protect delay | a6 | ms |
+| 12 | 2 | Cell UVP alarm | b1 | V = val / 1000 (mV) |
+| 14 | 2 | Cell UVP alarm release | b2 | V = val / 1000 (mV) |
+| 16 | 2 | Cell UVP alarm delay | b3 | ms |
+| 18 | 2 | Cell UVP protect (L1) | b4 | V = val / 1000 (mV) |
+| 20 | 2 | Cell UVP protect release | b5 | V = val / 1000 (mV) |
+| 22 | 2 | Cell UVP protect delay | b6 | ms |
+| 24 | 2 | Pack OVP alarm | c1 | V = val / 100 (cV) |
+| 26 | 2 | Pack OVP alarm release | c2 | V = val / 100 (cV) |
+| 28 | 2 | Pack OVP alarm delay | c3 | ms |
+| 30 | 2 | Pack OVP protect (L1) | c4 | V = val / 100 (cV) |
+| 32 | 2 | Pack OVP protect release | c5 | V = val / 100 (cV) |
+| 34 | 2 | Pack OVP protect delay | c6 | ms |
+| 36 | 2 | Pack UVP alarm | d1 | V = val / 100 (cV) |
+| 38 | 2 | Pack UVP alarm release | d2 | V = val / 100 (cV) |
+| 40 | 2 | Pack UVP alarm delay | d3 | ms |
+| 42 | 2 | Pack UVP protect (L1) | d4 | V = val / 100 (cV) |
+| 44 | 2 | Pack UVP protect release | d5 | V = val / 100 (cV) |
+| 46 | 2 | Pack UVP protect delay | d6 | ms |
+
+### Current Protection (Offsets 48-87)
+
+Charge and discharge overcurrent protection. Values are stored as deciamps (dA), divide by 10 for Amps.
+
+| Offset | Size | Description | CSV | Unit/Formula |
+|--------|------|-------------|-----|--------------|
+| 48 | 2 | Charge OC alarm (L1) | e1 | A = val / 10 |
+| 50 | 2 | Reserved | - | - |
+| 52 | 2 | Charge OC alarm delay | e3 | ms |
+| 54 | 2 | Charge OC protect (L1) | e4 | A = val / 10 |
+| 56 | 2 | Charge OC protect delay | e5 | ms |
+| 58 | 2 | Charge OC recover delay | e6 | s = val / 1000 |
+| 60 | 2 | Reserved | - | - |
+| 62 | 2 | Charge OC2 protect (L2) | f1 | A = val / 10 |
+| 64 | 2 | Charge OC2 protect delay | f2 | ms |
+| 66 | 2 | Reserved | - | - |
+| 68 | 2 | Discharge OC alarm (L1) | g1 | A = val / 10 |
+| 70 | 2 | Reserved | - | - |
+| 72 | 2 | Discharge OC alarm delay | g3 | ms |
+| 74 | 2 | Discharge OC protect (L1) | g4 | A = val / 10 |
+| 76 | 2 | Discharge OC protect delay | g5 | ms |
+| 78 | 2 | Discharge OC recover delay | g6 | s = val / 1000 |
+| 80 | 2 | Reserved | - | - |
+| 82 | 2 | Discharge OC2 protect (L2) | h1 | A = val / 10 |
+| 84 | 2 | Discharge OC2 protect delay | h2 | ms |
+| 86 | 2 | Reserved | - | - |
+
+### Temperature Protection (Offsets 88-135)
 
 Temperature formula: `°C = (raw - 500) / 10`
 Delay formula: `seconds = raw / 1000`
 
-| Offset | Size | Description | Unit/Formula |
-|--------|------|-------------|--------------|
-| 94 | 2 | Charge over-temp trigger | °C = (val - 500) / 10 |
-| 96 | 2 | Charge over-temp release | °C = (val - 500) / 10 |
-| 98 | 2 | Charge over-temp delay | s = val / 1000 |
-| 106 | 2 | Charge under-temp trigger | °C = (val - 500) / 10 |
-| 108 | 2 | Charge under-temp release | °C = (val - 500) / 10 |
-| 110 | 2 | Charge under-temp delay | s = val / 1000 |
-| 118 | 2 | Discharge over-temp trigger | °C = (val - 500) / 10 |
-| 120 | 2 | Discharge over-temp release | °C = (val - 500) / 10 |
-| 122 | 2 | Discharge over-temp delay | s = val / 1000 |
-| 130 | 2 | Discharge under-temp trigger | °C = (val - 500) / 10 |
-| 132 | 2 | Discharge under-temp release | °C = (val - 500) / 10 |
-| 134 | 2 | Discharge under-temp delay | s = val / 1000 |
+| Offset | Size | Description | CSV | Unit/Formula |
+|--------|------|-------------|-----|--------------|
+| 88 | 2 | Charge OT alarm | i1 | °C = (val - 500) / 10 |
+| 90 | 2 | Charge OT alarm release | i2 | °C = (val - 500) / 10 |
+| 92 | 2 | Charge OT alarm delay | i3 | s = val / 1000 |
+| 94 | 2 | Charge OT protect | i4 | °C = (val - 500) / 10 |
+| 96 | 2 | Charge OT protect release | i5 | °C = (val - 500) / 10 |
+| 98 | 2 | Charge OT protect delay | i6 | s = val / 1000 |
+| 100 | 2 | Charge UT alarm | j1 | °C = (val - 500) / 10 |
+| 102 | 2 | Charge UT alarm release | j2 | °C = (val - 500) / 10 |
+| 104 | 2 | Charge UT alarm delay | j3 | s = val / 1000 |
+| 106 | 2 | Charge UT protect | j4 | °C = (val - 500) / 10 |
+| 108 | 2 | Charge UT protect release | j5 | °C = (val - 500) / 10 |
+| 110 | 2 | Charge UT protect delay | j6 | s = val / 1000 |
+| 112 | 2 | Discharge OT alarm | k1 | °C = (val - 500) / 10 |
+| 114 | 2 | Discharge OT alarm release | k2 | °C = (val - 500) / 10 |
+| 116 | 2 | Discharge OT alarm delay | k3 | s = val / 1000 |
+| 118 | 2 | Discharge OT protect | k4 | °C = (val - 500) / 10 |
+| 120 | 2 | Discharge OT protect release | k5 | °C = (val - 500) / 10 |
+| 122 | 2 | Discharge OT protect delay | k6 | s = val / 1000 |
+| 124 | 2 | Discharge UT alarm | l1 | °C = (val - 500) / 10 |
+| 126 | 2 | Discharge UT alarm release | l2 | °C = (val - 500) / 10 |
+| 128 | 2 | Discharge UT alarm delay | l3 | s = val / 1000 |
+| 130 | 2 | Discharge UT protect | l4 | °C = (val - 500) / 10 |
+| 132 | 2 | Discharge UT protect release | l5 | °C = (val - 500) / 10 |
+| 134 | 2 | Discharge UT protect delay | l6 | s = val / 1000 |
 
-**Example values for 16S LiFePO4:**
+### Example Values for 16S 100Ah LiFePO4
 
-Voltage protection:
-- Cell OVP trigger: 3.600V (0x0E10 = 3600mV)
-- Cell OVP release: 3.400V (0x0D48 = 3400mV)
-- Cell UVP trigger: 2.700V (0x0A8C = 2700mV)
-- Cell UVP release: 2.900V (0x0B54 = 2900mV)
-- Pack OVP trigger: 57.60V (0x1680 = 5760cV)
-- Pack OVP release: 54.40V (0x1540 = 5440cV)
-- Pack UVP trigger: 42.00V (0x1068 = 4200cV)
-- Pack UVP release: 48.00V (0x12C0 = 4800cV)
+**Voltage protection:**
+- Cell OVP alarm: 3.55V, protect: 3.60V
+- Cell UVP alarm: 2.75V, protect: 2.70V
+- Pack OVP alarm: 56.80V, protect: 57.60V
+- Pack UVP alarm: 44.00V, protect: 42.00V
 
-Temperature protection:
-- Charge OT: 65°C trigger (0x047E), 50°C release (0x03E8), 3s delay (0x0BB8)
-- Charge UT: 0°C trigger (0x01F4), 5°C release (0x0226), 1s delay (0x03E8)
-- Discharge OT: 65°C trigger (0x047E), 50°C release (0x03E8), 1s delay (0x03E8)
-- Discharge UT: -20°C trigger (0x012C), -15°C release (0x015E), 1s delay (0x03E8)
+**Current protection:**
+- Charge OC alarm: 105A (e1), L1 protect: 120A (e4), L2 protect: 130A (f1)
+- Discharge OC alarm: 105A (g1), L1 protect: 120A (g4), L2 protect: 140A (h1)
+- Short circuit: 1236A threshold (z028), 125μs delay (z029) - stored in 0x2000
+
+**Temperature protection:**
+- Charge OT: 55°C alarm, 65°C protect
+- Charge UT: 5°C alarm, 0°C protect
+- Discharge OT: 60°C alarm, 65°C protect
+- Discharge UT: -15°C alarm, -20°C protect
 
 ## Configuration Block 1 (0x1C00 - 0x1CA0)
 

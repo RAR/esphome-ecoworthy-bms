@@ -1059,6 +1059,53 @@ void EcoworthyBms::on_protection_params_data_(const std::vector<uint8_t> &data) 
     ESP_LOGD(TAG, "Discharge UT: trigger=%.1f°C, release=%.1f°C, delay=%.0fs", 
              discharge_ut_trigger, discharge_ut_release, discharge_ut_delay);
   }
+
+  // Current protection thresholds (offsets 48-87)
+  // Values stored in deciamps (dA), divide by 10 for Amps
+  // Delays stored in milliseconds, divide by 1000 for seconds
+  if (data_length >= 88) {
+    // OCC - Charge over-current (offsets 48-67)
+    float charge_oc_alarm = get_16bit(48) / 10.0f;           // e1: OCC alarm (dA)
+    float charge_oc_alarm_delay = get_16bit(52) / 1000.0f;   // e3: OCC alarm delay (ms)
+    float charge_oc_trigger = get_16bit(54) / 10.0f;         // e4: OCC protect L1 (dA)
+    float charge_oc_delay = get_16bit(56) / 1000.0f;         // e5: OCC protect delay (ms)
+    float charge_oc_recover = get_16bit(58);                 // e6: OCC recover delay (s)
+    float charge_oc2_trigger = get_16bit(62) / 10.0f;        // f1: OCC2 protect L2 (dA)
+    float charge_oc2_delay = get_16bit(64);                  // f2: OCC2 delay (ms)
+    
+    this->publish_state_(this->charge_oc_alarm_sensor_, charge_oc_alarm);
+    this->publish_state_(this->charge_oc_alarm_delay_sensor_, charge_oc_alarm_delay);
+    this->publish_state_(this->charge_oc_trigger_sensor_, charge_oc_trigger);
+    this->publish_state_(this->charge_oc_delay_sensor_, charge_oc_delay);
+    this->publish_state_(this->charge_oc_recover_delay_sensor_, charge_oc_recover);
+    this->publish_state_(this->charge_oc2_trigger_sensor_, charge_oc2_trigger);
+    this->publish_state_(this->charge_oc2_delay_sensor_, charge_oc2_delay);
+    
+    ESP_LOGD(TAG, "Charge OC: alarm=%.1fA, L1=%.1fA (%.1fs), L2=%.1fA (%dms)", 
+             charge_oc_alarm, charge_oc_trigger, charge_oc_delay, 
+             charge_oc2_trigger, (int)charge_oc2_delay);
+
+    // OCD - Discharge over-current (offsets 68-87)
+    float discharge_oc_alarm = get_16bit(68) / 10.0f;           // g1: OCD alarm (dA)
+    float discharge_oc_alarm_delay = get_16bit(72) / 1000.0f;   // g3: OCD alarm delay (ms)
+    float discharge_oc_trigger = get_16bit(74) / 10.0f;         // g4: OCD protect L1 (dA)
+    float discharge_oc_delay = get_16bit(76) / 1000.0f;         // g5: OCD protect delay (ms)
+    float discharge_oc_recover = get_16bit(78);                 // g6: OCD recover delay (s)
+    float discharge_oc2_trigger = get_16bit(82) / 10.0f;        // h1: OCD2 protect L2 (dA)
+    float discharge_oc2_delay = get_16bit(84);                  // h2: OCD2 delay (ms)
+    
+    this->publish_state_(this->discharge_oc_alarm_sensor_, discharge_oc_alarm);
+    this->publish_state_(this->discharge_oc_alarm_delay_sensor_, discharge_oc_alarm_delay);
+    this->publish_state_(this->discharge_oc_trigger_sensor_, discharge_oc_trigger);
+    this->publish_state_(this->discharge_oc_delay_sensor_, discharge_oc_delay);
+    this->publish_state_(this->discharge_oc_recover_delay_sensor_, discharge_oc_recover);
+    this->publish_state_(this->discharge_oc2_trigger_sensor_, discharge_oc2_trigger);
+    this->publish_state_(this->discharge_oc2_delay_sensor_, discharge_oc2_delay);
+    
+    ESP_LOGD(TAG, "Discharge OC: alarm=%.1fA, L1=%.1fA (%.1fs), L2=%.1fA (%dms)", 
+             discharge_oc_alarm, discharge_oc_trigger, discharge_oc_delay, 
+             discharge_oc2_trigger, (int)discharge_oc2_delay);
+  }
 }
 
 // MOS control methods
