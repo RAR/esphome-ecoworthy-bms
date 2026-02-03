@@ -88,6 +88,7 @@ void EcoworthyBms::update() {
   } else {
     // After polling all batteries, poll config blocks for master
     // update_counter_ tracks completed poll cycles (increments after each config step)
+    ESP_LOGD(TAG, "Config polling: step=%d, counter=%d", this->request_step_, this->update_counter_);
     switch (this->request_step_) {
       case 0:
         // Request config block 1 (at startup and every 5th cycle)
