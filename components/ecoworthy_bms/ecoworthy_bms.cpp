@@ -729,85 +729,79 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
     ESP_LOGD(TAG, "0x1C00[%02d-..]: %s", (int)((data_length < 80 ? data_length : 80) / 16 * 16), hex_dump.c_str());
   }
 
-  // Offset 0: Balance open voltage (mV)
-  uint16_t raw_balance = get_16bit(0);
+  // Ecoworthy layout differs from EG4 - offsets are shifted by 4 bytes
+  // Offset 0-3: Unknown/unused (zeros)
+  // Offset 4: Balance open voltage (mV)
+  uint16_t raw_balance = get_16bit(4);
   float balance_voltage = raw_balance * 0.001f;
   ESP_LOGD(TAG, "Balance voltage: raw=%u (0x%04X), value=%.3fV", raw_balance, raw_balance, balance_voltage);
   this->publish_state_(this->balance_voltage_sensor_, balance_voltage);
 
-  // Offset 2: Balance difference voltage (mV)
-  uint16_t raw_diff = get_16bit(2);
+  // Offset 6: Balance difference voltage (mV)
+  uint16_t raw_diff = get_16bit(6);
   float balance_diff = raw_diff * 0.001f;
   ESP_LOGD(TAG, "Balance diff: raw=%u (0x%04X), value=%.3fV", raw_diff, raw_diff, balance_diff);
   this->publish_state_(this->balance_difference_sensor_, balance_diff);
 
-  // Offset 4: Heater start temp °C = (val - 500) / 10
-  uint16_t raw_heater_start = get_16bit(4);
+  // Offset 8: Heater start temp °C = (val - 500) / 10
+  uint16_t raw_heater_start = get_16bit(8);
   float heater_start = (raw_heater_start - 500) / 10.0f;
   ESP_LOGD(TAG, "Heater start: raw=%u, value=%.1f°C", raw_heater_start, heater_start);
   this->publish_state_(this->heater_start_temp_sensor_, heater_start);
 
-  // Offset 6: Heater stop temp °C = (val - 500) / 10
-  uint16_t raw_heater_stop = get_16bit(6);
+  // Offset 10: Heater stop temp °C = (val - 500) / 10
+  uint16_t raw_heater_stop = get_16bit(10);
   float heater_stop = (raw_heater_stop - 500) / 10.0f;
   ESP_LOGD(TAG, "Heater stop: raw=%u, value=%.1f°C", raw_heater_stop, heater_stop);
   this->publish_state_(this->heater_stop_temp_sensor_, heater_stop);
 
-  // Offset 8: Full charge voltage V = val / 100
-  uint16_t raw_full_chg_v = get_16bit(8);
+  // Offset 12: Full charge voltage V = val / 100
+  uint16_t raw_full_chg_v = get_16bit(12);
   float full_chg_v = raw_full_chg_v / 100.0f;
   ESP_LOGD(TAG, "Full charge voltage: raw=%u, value=%.2fV", raw_full_chg_v, full_chg_v);
   this->publish_state_(this->full_charge_voltage_sensor_, full_chg_v);
 
-  // Offset 10: Full charge current A = val / 10
-  uint16_t raw_full_chg_a = get_16bit(10);
-  float full_chg_a = raw_full_chg_a / 10.0f;
-  ESP_LOGD(TAG, "Full charge current: raw=%u, value=%.1fA", raw_full_chg_a, full_chg_a);
+  // Offset 14: Full charge current A = val / 100 (centiamps)
+  uint16_t raw_full_chg_a = get_16bit(14);
+  float full_chg_a = raw_full_chg_a / 100.0f;
+  ESP_LOGD(TAG, "Full charge current: raw=%u, value=%.2fA", raw_full_chg_a, full_chg_a);
   this->publish_state_(this->full_charge_current_sensor_, full_chg_a);
 
-  // Offset 12-27: BMS SN code (16 bytes)
-  if (data_length >= 28) {
-    std::string bms_sn((char *)&payload[12], 16);
-    size_t end = bms_sn.find('\0');
-    if (end != std::string::npos) bms_sn = bms_sn.substr(0, end);
-    ESP_LOGD(TAG, "BMS SN: '%s'", bms_sn.c_str());
-    this->publish_state_(this->bms_serial_number_text_sensor_, bms_sn);
+  // Offset 16-41: Serial number (26 bytes)
+  if (data_length >= 42) {
+    std::string serial((char *)&payload[16], 26);
+    size_t end = serial.find('\0');
+    if (end != std::string::npos) serial = serial.substr(0, end);
+    ESP_LOGD(TAG, "Serial number: '%s'", serial.c_str());
+    this->publish_state_(this->bms_serial_number_text_sensor_, serial);
   }
 
-  // Offset 28-43: Pack SN code (16 bytes)
-  if (data_length >= 44) {
-    std::string pack_sn((char *)&payload[28], 16);
-    size_t end = pack_sn.find('\0');
-    if (end != std::string::npos) pack_sn = pack_sn.substr(0, end);
-    ESP_LOGD(TAG, "Pack SN: '%s'", pack_sn.c_str());
-    this->publish_state_(this->pack_serial_number_text_sensor_, pack_sn);
+  // Offset 46-51: Manufacturing date (year, month, day)
+  // Note: Ecoworthy stores mfg date here, EG4 stores pack SN at different offset
+  if (data_length >= 52) {
+    uint16_t year = get_16bit(46);
+    uint16_t month = get_16bit(48);
+    uint16_t day = get_16bit(50);
+    char date_str[16];
+    snprintf(date_str, sizeof(date_str), "%04u-%02u-%02u", year, month, day);
+    ESP_LOGD(TAG, "Manufacturing date: %s", date_str);
+    // Publish to pack_serial_number sensor as "Mfg: YYYY-MM-DD"
+    this->publish_state_(this->pack_serial_number_text_sensor_, std::string("Mfg: ") + date_str);
   }
 
-  // Offset 44-59: Manufacturer code (16 bytes)
-  if (data_length >= 60) {
-    std::string manufacturer((char *)&payload[44], 16);
+  // Offset 52: Manufacturer/Model code (12+ bytes)
+  if (data_length >= 64) {
+    std::string manufacturer((char *)&payload[52], 12);
     size_t end = manufacturer.find('\0');
     if (end != std::string::npos) manufacturer = manufacturer.substr(0, end);
     ESP_LOGD(TAG, "Manufacturer: '%s'", manufacturer.c_str());
     this->publish_state_(this->manufacturer_text_sensor_, manufacturer);
   }
 
-  // Offset 60: CAN protocol (0: PYLON, 1: SMA, 2: Victron, 3: Growatt, etc.)
-  if (data_length >= 62) {
-    uint16_t can_proto = get_16bit(60);
-    ESP_LOGD(TAG, "CAN protocol: raw=%u", can_proto);
-    this->publish_state_(this->can_protocol_text_sensor_, this->decode_can_protocol_(can_proto));
-  }
-
-  // Offset 62: RS485 protocol
-  if (data_length >= 64) {
-    uint16_t rs485_proto = get_16bit(62);
-    ESP_LOGD(TAG, "RS485 protocol: raw=%u", rs485_proto);
-    this->publish_state_(this->rs485_protocol_text_sensor_, this->decode_rs485_protocol_(rs485_proto));
-  }
-
-  // Offset 64: Sleep voltage V = val / 100
-  if (data_length >= 66) {
+  // Remaining fields may be at different offsets or not present
+  // CAN/RS485 protocol and sleep settings need further analysis
+  if (data_length >= 80) {
+    // Offset 64: Sleep voltage V = val / 100
     uint16_t raw_sleep_v = get_16bit(64);
     float sleep_v = raw_sleep_v / 100.0f;
     ESP_LOGD(TAG, "Sleep voltage: raw=%u, value=%.2fV", raw_sleep_v, sleep_v);
