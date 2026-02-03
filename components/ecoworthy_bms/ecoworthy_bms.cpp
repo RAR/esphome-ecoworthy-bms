@@ -995,6 +995,50 @@ void EcoworthyBms::on_protection_params_data_(const std::vector<uint8_t> &data) 
     ESP_LOGD(TAG, "Pack OVP: trigger=%.2fV, release=%.2fV", pack_ovp_trigger, pack_ovp_release);
     ESP_LOGD(TAG, "Pack UVP: trigger=%.2fV, release=%.2fV", pack_uvp_trigger, pack_uvp_release);
   }
+
+  // Temperature protection thresholds
+  // Formula: temp_celsius = (raw - 500) / 10.0, delay_seconds = raw / 1000.0
+  if (data_length >= 136) {
+    // Charge over-temperature (offset 94-99)
+    float charge_ot_trigger = (get_16bit(94) - 500) / 10.0f;
+    float charge_ot_release = (get_16bit(96) - 500) / 10.0f;
+    float charge_ot_delay = get_16bit(98) / 1000.0f;
+    this->publish_state_(this->charge_ot_trigger_sensor_, charge_ot_trigger);
+    this->publish_state_(this->charge_ot_release_sensor_, charge_ot_release);
+    this->publish_state_(this->charge_ot_delay_sensor_, charge_ot_delay);
+    ESP_LOGD(TAG, "Charge OT: trigger=%.1f°C, release=%.1f°C, delay=%.0fs", 
+             charge_ot_trigger, charge_ot_release, charge_ot_delay);
+
+    // Charge under-temperature (offset 106-111)
+    float charge_ut_trigger = (get_16bit(106) - 500) / 10.0f;
+    float charge_ut_release = (get_16bit(108) - 500) / 10.0f;
+    float charge_ut_delay = get_16bit(110) / 1000.0f;
+    this->publish_state_(this->charge_ut_trigger_sensor_, charge_ut_trigger);
+    this->publish_state_(this->charge_ut_release_sensor_, charge_ut_release);
+    this->publish_state_(this->charge_ut_delay_sensor_, charge_ut_delay);
+    ESP_LOGD(TAG, "Charge UT: trigger=%.1f°C, release=%.1f°C, delay=%.0fs", 
+             charge_ut_trigger, charge_ut_release, charge_ut_delay);
+
+    // Discharge over-temperature (offset 118-123)
+    float discharge_ot_trigger = (get_16bit(118) - 500) / 10.0f;
+    float discharge_ot_release = (get_16bit(120) - 500) / 10.0f;
+    float discharge_ot_delay = get_16bit(122) / 1000.0f;
+    this->publish_state_(this->discharge_ot_trigger_sensor_, discharge_ot_trigger);
+    this->publish_state_(this->discharge_ot_release_sensor_, discharge_ot_release);
+    this->publish_state_(this->discharge_ot_delay_sensor_, discharge_ot_delay);
+    ESP_LOGD(TAG, "Discharge OT: trigger=%.1f°C, release=%.1f°C, delay=%.0fs", 
+             discharge_ot_trigger, discharge_ot_release, discharge_ot_delay);
+
+    // Discharge under-temperature (offset 130-135)
+    float discharge_ut_trigger = (get_16bit(130) - 500) / 10.0f;
+    float discharge_ut_release = (get_16bit(132) - 500) / 10.0f;
+    float discharge_ut_delay = get_16bit(134) / 1000.0f;
+    this->publish_state_(this->discharge_ut_trigger_sensor_, discharge_ut_trigger);
+    this->publish_state_(this->discharge_ut_release_sensor_, discharge_ut_release);
+    this->publish_state_(this->discharge_ut_delay_sensor_, discharge_ut_delay);
+    ESP_LOGD(TAG, "Discharge UT: trigger=%.1f°C, release=%.1f°C, delay=%.0fs", 
+             discharge_ut_trigger, discharge_ut_release, discharge_ut_delay);
+  }
 }
 
 // MOS control methods

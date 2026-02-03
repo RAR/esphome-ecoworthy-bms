@@ -244,6 +244,19 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_pack_ovp_release_sensor(sensor::Sensor *s) { pack_ovp_release_sensor_ = s; }
   void set_pack_uvp_trigger_sensor(sensor::Sensor *s) { pack_uvp_trigger_sensor_ = s; }
   void set_pack_uvp_release_sensor(sensor::Sensor *s) { pack_uvp_release_sensor_ = s; }
+  // Temperature protection sensors
+  void set_charge_ot_trigger_sensor(sensor::Sensor *s) { charge_ot_trigger_sensor_ = s; }
+  void set_charge_ot_release_sensor(sensor::Sensor *s) { charge_ot_release_sensor_ = s; }
+  void set_charge_ot_delay_sensor(sensor::Sensor *s) { charge_ot_delay_sensor_ = s; }
+  void set_charge_ut_trigger_sensor(sensor::Sensor *s) { charge_ut_trigger_sensor_ = s; }
+  void set_charge_ut_release_sensor(sensor::Sensor *s) { charge_ut_release_sensor_ = s; }
+  void set_charge_ut_delay_sensor(sensor::Sensor *s) { charge_ut_delay_sensor_ = s; }
+  void set_discharge_ot_trigger_sensor(sensor::Sensor *s) { discharge_ot_trigger_sensor_ = s; }
+  void set_discharge_ot_release_sensor(sensor::Sensor *s) { discharge_ot_release_sensor_ = s; }
+  void set_discharge_ot_delay_sensor(sensor::Sensor *s) { discharge_ot_delay_sensor_ = s; }
+  void set_discharge_ut_trigger_sensor(sensor::Sensor *s) { discharge_ut_trigger_sensor_ = s; }
+  void set_discharge_ut_release_sensor(sensor::Sensor *s) { discharge_ut_release_sensor_ = s; }
+  void set_discharge_ut_delay_sensor(sensor::Sensor *s) { discharge_ut_delay_sensor_ = s; }
 
   // Text sensors
   void set_operation_status_text_sensor(text_sensor::TextSensor *operation_status) { operation_status_text_sensor_ = operation_status; }
@@ -351,6 +364,19 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *pack_ovp_release_sensor_{nullptr};
   sensor::Sensor *pack_uvp_trigger_sensor_{nullptr};
   sensor::Sensor *pack_uvp_release_sensor_{nullptr};
+  // Temperature protection sensors
+  sensor::Sensor *charge_ot_trigger_sensor_{nullptr};
+  sensor::Sensor *charge_ot_release_sensor_{nullptr};
+  sensor::Sensor *charge_ot_delay_sensor_{nullptr};
+  sensor::Sensor *charge_ut_trigger_sensor_{nullptr};
+  sensor::Sensor *charge_ut_release_sensor_{nullptr};
+  sensor::Sensor *charge_ut_delay_sensor_{nullptr};
+  sensor::Sensor *discharge_ot_trigger_sensor_{nullptr};
+  sensor::Sensor *discharge_ot_release_sensor_{nullptr};
+  sensor::Sensor *discharge_ot_delay_sensor_{nullptr};
+  sensor::Sensor *discharge_ut_trigger_sensor_{nullptr};
+  sensor::Sensor *discharge_ut_release_sensor_{nullptr};
+  sensor::Sensor *discharge_ut_delay_sensor_{nullptr};
 
   // Configuration sensors
   sensor::Sensor *balance_voltage_sensor_{nullptr};

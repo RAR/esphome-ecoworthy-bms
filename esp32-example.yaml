@@ -256,6 +256,32 @@ sensor:
       name: "${name} pack UVP trigger"
     pack_uvp_release:
       name: "${name} pack UVP release"
+    
+    # Temperature protection thresholds
+    charge_ot_trigger:
+      name: "${name} charge OT trigger"
+    charge_ot_release:
+      name: "${name} charge OT release"
+    charge_ot_delay:
+      name: "${name} charge OT delay"
+    charge_ut_trigger:
+      name: "${name} charge UT trigger"
+    charge_ut_release:
+      name: "${name} charge UT release"
+    charge_ut_delay:
+      name: "${name} charge UT delay"
+    discharge_ot_trigger:
+      name: "${name} discharge OT trigger"
+    discharge_ot_release:
+      name: "${name} discharge OT release"
+    discharge_ot_delay:
+      name: "${name} discharge OT delay"
+    discharge_ut_trigger:
+      name: "${name} discharge UT trigger"
+    discharge_ut_release:
+      name: "${name} discharge UT release"
+    discharge_ut_delay:
+      name: "${name} discharge UT delay"
 
     # Uncomment below to add slave battery sensors (requires battery_count >= 2)
     # All Pack Status sensors are available for slaves (same as master except config blocks)

@@ -115,6 +115,19 @@ CONF_PACK_OVP_TRIGGER = "pack_ovp_trigger"
 CONF_PACK_OVP_RELEASE = "pack_ovp_release"
 CONF_PACK_UVP_TRIGGER = "pack_uvp_trigger"
 CONF_PACK_UVP_RELEASE = "pack_uvp_release"
+# Temperature protection thresholds
+CONF_CHARGE_OT_TRIGGER = "charge_ot_trigger"
+CONF_CHARGE_OT_RELEASE = "charge_ot_release"
+CONF_CHARGE_OT_DELAY = "charge_ot_delay"
+CONF_CHARGE_UT_TRIGGER = "charge_ut_trigger"
+CONF_CHARGE_UT_RELEASE = "charge_ut_release"
+CONF_CHARGE_UT_DELAY = "charge_ut_delay"
+CONF_DISCHARGE_OT_TRIGGER = "discharge_ot_trigger"
+CONF_DISCHARGE_OT_RELEASE = "discharge_ot_release"
+CONF_DISCHARGE_OT_DELAY = "discharge_ot_delay"
+CONF_DISCHARGE_UT_TRIGGER = "discharge_ut_trigger"
+CONF_DISCHARGE_UT_RELEASE = "discharge_ut_release"
+CONF_DISCHARGE_UT_DELAY = "discharge_ut_delay"
 
 UNIT_AMPERE_HOURS = "Ah"
 UNIT_MINUTES = "min"
@@ -568,6 +581,87 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             state_class=STATE_CLASS_MEASUREMENT,
             icon="mdi:flash-triangle-outline",
         ),
+        # Temperature protection thresholds
+        cv.Optional(CONF_CHARGE_OT_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_CHARGE_OT_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_CHARGE_OT_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_CHARGE_UT_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_CHARGE_UT_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_CHARGE_UT_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_DISCHARGE_OT_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_DISCHARGE_OT_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_DISCHARGE_OT_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
+        cv.Optional(CONF_DISCHARGE_UT_TRIGGER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_DISCHARGE_UT_RELEASE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:thermometer-alert",
+        ),
+        cv.Optional(CONF_DISCHARGE_UT_DELAY): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:timer-outline",
+        ),
         # Per-battery sensors for slave batteries (battery_2, battery_3, etc.)
         # Use battery index as key (2-16)
         cv.Optional(CONF_BATTERIES): cv.Schema({
@@ -821,6 +915,44 @@ async def to_code(config):
     if CONF_PACK_UVP_RELEASE in config:
         sens = await sensor.new_sensor(config[CONF_PACK_UVP_RELEASE])
         cg.add(hub.set_pack_uvp_release_sensor(sens))
+
+    # Temperature protection thresholds
+    if CONF_CHARGE_OT_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OT_TRIGGER])
+        cg.add(hub.set_charge_ot_trigger_sensor(sens))
+    if CONF_CHARGE_OT_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OT_RELEASE])
+        cg.add(hub.set_charge_ot_release_sensor(sens))
+    if CONF_CHARGE_OT_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_OT_DELAY])
+        cg.add(hub.set_charge_ot_delay_sensor(sens))
+    if CONF_CHARGE_UT_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_UT_TRIGGER])
+        cg.add(hub.set_charge_ut_trigger_sensor(sens))
+    if CONF_CHARGE_UT_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_UT_RELEASE])
+        cg.add(hub.set_charge_ut_release_sensor(sens))
+    if CONF_CHARGE_UT_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_CHARGE_UT_DELAY])
+        cg.add(hub.set_charge_ut_delay_sensor(sens))
+    if CONF_DISCHARGE_OT_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OT_TRIGGER])
+        cg.add(hub.set_discharge_ot_trigger_sensor(sens))
+    if CONF_DISCHARGE_OT_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OT_RELEASE])
+        cg.add(hub.set_discharge_ot_release_sensor(sens))
+    if CONF_DISCHARGE_OT_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_OT_DELAY])
+        cg.add(hub.set_discharge_ot_delay_sensor(sens))
+    if CONF_DISCHARGE_UT_TRIGGER in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_UT_TRIGGER])
+        cg.add(hub.set_discharge_ut_trigger_sensor(sens))
+    if CONF_DISCHARGE_UT_RELEASE in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_UT_RELEASE])
+        cg.add(hub.set_discharge_ut_release_sensor(sens))
+    if CONF_DISCHARGE_UT_DELAY in config:
+        sens = await sensor.new_sensor(config[CONF_DISCHARGE_UT_DELAY])
+        cg.add(hub.set_discharge_ut_delay_sensor(sens))
 
     # Per-battery sensors for slave batteries
     if CONF_BATTERIES in config:
