@@ -90,14 +90,15 @@ void EcoworthyBms::update() {
     // update_counter_ tracks completed poll cycles (increments after each config step)
     switch (this->request_step_) {
       case 0:
-        // Request config block 1 (every 5th cycle = 20 update calls with 4 batteries)
-        if ((this->update_counter_ % 5) == 0) {
+        // Request config block 1 (at startup and every 5th cycle)
+        if (this->update_counter_ <= 1 || (this->update_counter_ % 5) == 0) {
+          ESP_LOGD(TAG, "Polling 0x1C00 config block (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_CONFIG_1C00_START, REG_CONFIG_1C00_END);
         }
         break;
       case 1:
-        // Request config block 2 (every 10th cycle)
-        if ((this->update_counter_ % 10) == 0) {
+        // Request config block 2 (at startup and every 10th cycle)
+        if (this->update_counter_ <= 2 || (this->update_counter_ % 10) == 0) {
           this->send(FUNCTION_READ, REG_CONFIG_2000_START, REG_CONFIG_2000_END);
         }
         break;
@@ -711,14 +712,18 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
     return (uint16_t(payload[i]) << 8) | uint16_t(payload[i + 1]);
   };
 
-  ESP_LOGV(TAG, "Processing %d bytes of config 0x1C00 data", data_length);
+  ESP_LOGD(TAG, "Processing %d bytes of config 0x1C00 data", data_length);
 
   // Offset 0: Balance open voltage (mV)
-  float balance_voltage = get_16bit(0) * 0.001f;
+  uint16_t raw_balance = get_16bit(0);
+  float balance_voltage = raw_balance * 0.001f;
+  ESP_LOGD(TAG, "Balance voltage: raw=%u (0x%04X), value=%.3fV", raw_balance, raw_balance, balance_voltage);
   this->publish_state_(this->balance_voltage_sensor_, balance_voltage);
 
   // Offset 2: Balance difference voltage (mV)
-  float balance_diff = get_16bit(2) * 0.001f;
+  uint16_t raw_diff = get_16bit(2);
+  float balance_diff = raw_diff * 0.001f;
+  ESP_LOGD(TAG, "Balance diff: raw=%u (0x%04X), value=%.3fV", raw_diff, raw_diff, balance_diff);
   this->publish_state_(this->balance_difference_sensor_, balance_diff);
 
   // Offset 4: Heater start temp °C = (val - 500) / 10
