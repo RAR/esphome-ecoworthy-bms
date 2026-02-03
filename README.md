@@ -1,7 +1,5 @@
 # ESPHome Ecoworthy BMS Component
 
-> ⚠️ **This component is currently in development and has not been tested with real hardware yet.** Use at your own risk and please report any issues or contribute fixes!
-
 ESPHome component to monitor Ecoworthy Battery Management Systems (BMS) via RS485 Modbus RTU.
 
 This is a native C++ implementation that communicates directly with the Ecoworthy/JBD BMS using a custom Modbus-RTU protocol, providing comprehensive monitoring of your battery pack.

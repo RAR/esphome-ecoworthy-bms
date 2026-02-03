@@ -838,7 +838,18 @@ void EcoworthyBms::on_config_2000_data_(const std::vector<uint8_t> &data) {
            (uint32_t(payload[i + 2]) << 8) | uint32_t(payload[i + 3]);
   };
 
-  ESP_LOGV(TAG, "Processing %d bytes of config 0x2000 data", data_length);
+  ESP_LOGD(TAG, "Processing %d bytes of config 0x2000 data", data_length);
+
+  // Hex dump all bytes to analyze structure
+  for (size_t row = 0; row < data_length; row += 16) {
+    std::string hex_dump;
+    for (size_t i = row; i < std::min(row + 16, data_length); i++) {
+      char buf[4];
+      snprintf(buf, sizeof(buf), "%02X ", payload[i]);
+      hex_dump += buf;
+    }
+    ESP_LOGD(TAG, "0x2000[%03d-%03d]: %s", (int)row, (int)(row + 15), hex_dump.c_str());
+  }
 
   // Offset 12: Total charge (4 bytes) Ah = val / 100
   if (data_length >= 16) {
