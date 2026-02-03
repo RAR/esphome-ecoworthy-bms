@@ -935,7 +935,18 @@ void EcoworthyBms::on_protection_params_data_(const std::vector<uint8_t> &data) 
     return (uint16_t(payload[i]) << 8) | uint16_t(payload[i + 1]);
   };
 
-  ESP_LOGV(TAG, "Processing %d bytes of protection params data", data_length);
+  ESP_LOGD(TAG, "Processing %d bytes of protection params (0x1800) data", data_length);
+
+  // Hex dump first 128 bytes to analyze structure
+  for (size_t row = 0; row < std::min(data_length, (size_t)128); row += 16) {
+    std::string hex_dump;
+    for (size_t i = row; i < std::min(row + 16, data_length); i++) {
+      char buf[4];
+      snprintf(buf, sizeof(buf), "%02X ", payload[i]);
+      hex_dump += buf;
+    }
+    ESP_LOGD(TAG, "0x1800[%02d-%02d]: %s", (int)row, (int)(row + 15), hex_dump.c_str());
+  }
 
   // The 0x1800 block contains protection thresholds
   // Based on reverse engineering, the layout appears to be:
