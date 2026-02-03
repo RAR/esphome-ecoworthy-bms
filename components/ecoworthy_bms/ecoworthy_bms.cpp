@@ -89,31 +89,38 @@ void EcoworthyBms::update() {
     // After polling all batteries, poll config blocks for master
     // update_counter_ tracks completed poll cycles (increments after each config step)
     ESP_LOGD(TAG, "Config polling: step=%d, counter=%d", this->request_step_, this->update_counter_);
+    // Note: step cycles 0,1,2,3,0,1,2,3... so step N occurs when counter % 4 == N
+    // For periodic polling, we need modulo that aligns with step offset
     switch (this->request_step_) {
       case 0:
-        // Request config block 1 (at startup and every 5th cycle)
-        if (this->update_counter_ <= 1 || (this->update_counter_ % 5) == 0) {
+        // Request config block 1 (at startup and every 20 config cycles = ~60 seconds)
+        // Step 0 at counter 0, 4, 8, 12, 16, 20... so counter % 20 == 0 aligns
+        if (this->update_counter_ <= 1 || (this->update_counter_ % 20) == 0) {
           ESP_LOGD(TAG, "Polling 0x1C00 config block (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_CONFIG_1C00_START, REG_CONFIG_1C00_END);
         }
         break;
       case 1:
-        // Request config block 2 (at startup and every 10th cycle)
-        if (this->update_counter_ <= 2 || (this->update_counter_ % 10) == 0) {
+        // Request config block 2 (at startup and every 40 config cycles = ~2 minutes)
+        // Step 1 at counter 1, 5, 9, 13... so (counter - 1) % 40 == 0 aligns
+        if (this->update_counter_ <= 2 || ((this->update_counter_ - 1) % 40) == 0) {
           ESP_LOGD(TAG, "Polling 0x2000 config block (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_CONFIG_2000_START, REG_CONFIG_2000_END);
         }
         break;
       case 2:
-        // Request product info (at startup and every 60th cycle)
-        if (this->update_counter_ == 0 || (this->update_counter_ % 60) == 0) {
+        // Request product info (at startup and every 240 config cycles = ~12 minutes)
+        // Step 2 at counter 2, 6, 10... so (counter - 2) % 240 == 0 aligns
+        if (this->update_counter_ <= 3 || ((this->update_counter_ - 2) % 240) == 0) {
+          ESP_LOGD(TAG, "Polling product info (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_PRODUCT_INFO_START, REG_PRODUCT_INFO_END);
         }
         break;
       case 3:
-        // Request protection parameters (at startup and every 30th cycle)
-        // Note: First poll happens on 4th update call when step first reaches 3
-        if (this->update_counter_ <= 4 || (this->update_counter_ % 30) == 0) {
+        // Request protection parameters (at startup and every 120 config cycles = ~6 minutes)
+        // Step 3 at counter 3, 7, 11... so (counter - 3) % 120 == 0 aligns
+        if (this->update_counter_ <= 4 || ((this->update_counter_ - 3) % 120) == 0) {
+          ESP_LOGD(TAG, "Polling 0x1800 protection params (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_PROTECTION_PARAMS_START, REG_PROTECTION_PARAMS_END);
         }
         break;
