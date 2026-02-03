@@ -99,6 +99,7 @@ void EcoworthyBms::update() {
       case 1:
         // Request config block 2 (at startup and every 10th cycle)
         if (this->update_counter_ <= 2 || (this->update_counter_ % 10) == 0) {
+          ESP_LOGD(TAG, "Polling 0x2000 config block (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_CONFIG_2000_START, REG_CONFIG_2000_END);
         }
         break;
