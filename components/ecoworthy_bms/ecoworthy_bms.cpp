@@ -721,22 +721,7 @@ void EcoworthyBms::on_config_1c00_data_(const std::vector<uint8_t> &data) {
     return (uint16_t(payload[i]) << 8) | uint16_t(payload[i + 1]);
   };
 
-  ESP_LOGD(TAG, "Processing %d bytes of config 0x1C00 data", data_length);
-
-  // Hex dump first 80 bytes to analyze structure
-  std::string hex_dump;
-  for (size_t i = 0; i < std::min(data_length, (size_t)80); i++) {
-    char buf[4];
-    snprintf(buf, sizeof(buf), "%02X ", payload[i]);
-    hex_dump += buf;
-    if ((i + 1) % 16 == 0) {
-      ESP_LOGD(TAG, "0x1C00[%02d-%02d]: %s", (int)(i - 15), (int)i, hex_dump.c_str());
-      hex_dump.clear();
-    }
-  }
-  if (!hex_dump.empty()) {
-    ESP_LOGD(TAG, "0x1C00[%02d-..]: %s", (int)((data_length < 80 ? data_length : 80) / 16 * 16), hex_dump.c_str());
-  }
+  ESP_LOGV(TAG, "Processing %d bytes of config 0x1C00 data", data_length);
 
   // Ecoworthy layout differs from EG4 - offsets are shifted by 4 bytes
   // Offset 0-3: Unknown/unused (zeros)
@@ -847,18 +832,7 @@ void EcoworthyBms::on_config_2000_data_(const std::vector<uint8_t> &data) {
            (uint32_t(payload[i + 2]) << 8) | uint32_t(payload[i + 3]);
   };
 
-  ESP_LOGD(TAG, "Processing %d bytes of config 0x2000 data", data_length);
-
-  // Hex dump all bytes to analyze structure
-  for (size_t row = 0; row < data_length; row += 16) {
-    std::string hex_dump;
-    for (size_t i = row; i < std::min(row + 16, data_length); i++) {
-      char buf[4];
-      snprintf(buf, sizeof(buf), "%02X ", payload[i]);
-      hex_dump += buf;
-    }
-    ESP_LOGD(TAG, "0x2000[%03d-%03d]: %s", (int)row, (int)(row + 15), hex_dump.c_str());
-  }
+  ESP_LOGV(TAG, "Processing %d bytes of config 0x2000 data", data_length);
 
   // Offset 12: Total charge (4 bytes) Ah = val / 100
   if (data_length >= 16) {
@@ -955,18 +929,7 @@ void EcoworthyBms::on_protection_params_data_(const std::vector<uint8_t> &data) 
     return (uint16_t(payload[i]) << 8) | uint16_t(payload[i + 1]);
   };
 
-  ESP_LOGD(TAG, "Processing %d bytes of protection params (0x1800) data", data_length);
-
-  // Hex dump all bytes to analyze structure (208 bytes typical)
-  for (size_t row = 0; row < data_length; row += 16) {
-    std::string hex_dump;
-    for (size_t i = row; i < std::min(row + 16, data_length); i++) {
-      char buf[4];
-      snprintf(buf, sizeof(buf), "%02X ", payload[i]);
-      hex_dump += buf;
-    }
-    ESP_LOGD(TAG, "0x1800[%03d-%03d]: %s", (int)row, (int)(row + 15), hex_dump.c_str());
-  }
+  ESP_LOGV(TAG, "Processing %d bytes of protection params (0x1800) data", data_length);
 
   // The 0x1800 block contains protection thresholds
   // Based on reverse engineering, the layout appears to be:
