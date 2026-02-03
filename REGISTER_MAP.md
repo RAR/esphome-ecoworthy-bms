@@ -149,33 +149,56 @@ This document describes the Modbus-RTU register map for Ecoworthy and JBD UP16S 
 
 ## Protection Parameters (0x1800 - 0x1900)
 
-The protection parameters block contains voltage and current protection thresholds. This block is 208 bytes and is only available from the master battery.
+The protection parameters block contains voltage, current, and temperature protection thresholds. This block is 208 bytes and is only available from the master battery.
+
+### Voltage Protection (Offsets 0-39)
 
 | Offset | Size | Description | Unit/Formula |
 |--------|------|-------------|--------------|
 | 0 | 2 | Cell OVP trigger | V = val / 1000 (mV) |
 | 2 | 2 | Cell OVP release | V = val / 1000 (mV) |
-| 4 | 2 | Unknown | - |
+| 4 | 2 | Cell OVP delay | ms |
 | 6 | 2 | Cell OVP hard limit | V = val / 1000 (mV) |
 | 8 | 2 | Unknown | - |
 | 10 | 2 | Unknown | - |
 | 12 | 2 | Cell UVP trigger | V = val / 1000 (mV) |
 | 14 | 2 | Cell UVP release | V = val / 1000 (mV) |
-| 16 | 2 | Unknown | - |
+| 16 | 2 | Cell UVP delay | ms |
 | 18 | 2 | Cell UVP hard limit | V = val / 1000 (mV) |
 | 20 | 2 | Unknown | - |
 | 22 | 2 | Unknown | - |
 | 24 | 2 | Pack OVP trigger | V = val / 100 (cV) |
 | 26 | 2 | Pack OVP release | V = val / 100 (cV) |
-| 28 | 2 | Unknown | - |
+| 28 | 2 | Pack OVP delay | ms |
 | 30 | 2 | Pack OVP hard limit | V = val / 100 (cV) |
 | 32 | 2 | Unknown | - |
 | 34 | 2 | Unknown | - |
 | 36 | 2 | Pack UVP trigger | V = val / 100 (cV) |
 | 38 | 2 | Pack UVP release | V = val / 100 (cV) |
-| ... | ... | Additional protection parameters | ... |
+
+### Temperature Protection (Offsets 94-135)
+
+Temperature formula: `°C = (raw - 500) / 10`
+Delay formula: `seconds = raw / 1000`
+
+| Offset | Size | Description | Unit/Formula |
+|--------|------|-------------|--------------|
+| 94 | 2 | Charge over-temp trigger | °C = (val - 500) / 10 |
+| 96 | 2 | Charge over-temp release | °C = (val - 500) / 10 |
+| 98 | 2 | Charge over-temp delay | s = val / 1000 |
+| 106 | 2 | Charge under-temp trigger | °C = (val - 500) / 10 |
+| 108 | 2 | Charge under-temp release | °C = (val - 500) / 10 |
+| 110 | 2 | Charge under-temp delay | s = val / 1000 |
+| 118 | 2 | Discharge over-temp trigger | °C = (val - 500) / 10 |
+| 120 | 2 | Discharge over-temp release | °C = (val - 500) / 10 |
+| 122 | 2 | Discharge over-temp delay | s = val / 1000 |
+| 130 | 2 | Discharge under-temp trigger | °C = (val - 500) / 10 |
+| 132 | 2 | Discharge under-temp release | °C = (val - 500) / 10 |
+| 134 | 2 | Discharge under-temp delay | s = val / 1000 |
 
 **Example values for 16S LiFePO4:**
+
+Voltage protection:
 - Cell OVP trigger: 3.600V (0x0E10 = 3600mV)
 - Cell OVP release: 3.400V (0x0D48 = 3400mV)
 - Cell UVP trigger: 2.700V (0x0A8C = 2700mV)
@@ -184,6 +207,45 @@ The protection parameters block contains voltage and current protection threshol
 - Pack OVP release: 54.40V (0x1540 = 5440cV)
 - Pack UVP trigger: 42.00V (0x1068 = 4200cV)
 - Pack UVP release: 48.00V (0x12C0 = 4800cV)
+
+Temperature protection:
+- Charge OT: 65°C trigger (0x047E), 50°C release (0x03E8), 3s delay (0x0BB8)
+- Charge UT: 0°C trigger (0x01F4), 5°C release (0x0226), 1s delay (0x03E8)
+- Discharge OT: 65°C trigger (0x047E), 50°C release (0x03E8), 1s delay (0x03E8)
+- Discharge UT: -20°C trigger (0x012C), -15°C release (0x015E), 1s delay (0x03E8)
+
+## Configuration Block 1 (0x1C00 - 0x1CA0)
+
+Configuration and identification data. This block is 136 bytes and is only available from the master battery.
+
+**Note:** Ecoworthy offsets are shifted by 4 bytes compared to some EG4 documentation.
+
+| Offset | Size | Description | Unit/Formula |
+|--------|------|-------------|--------------|
+| 0-3 | 4 | Unknown/Reserved | - |
+| 4 | 2 | Balance trigger voltage | V = val / 1000 (mV) |
+| 6 | 2 | Balance difference voltage | V = val / 1000 (mV) |
+| 8 | 2 | Heater start temp | °C = (val - 500) / 10 |
+| 10 | 2 | Heater stop temp | °C = (val - 500) / 10 |
+| 12 | 2 | Full charge voltage | V = val / 100 |
+| 14 | 2 | Full charge current | A = val / 100 |
+| 16 | 26 | Serial number | ASCII string |
+| 46 | 2 | Manufacturing year | Year |
+| 48 | 2 | Manufacturing month | Month (1-12) |
+| 50 | 2 | Manufacturing day | Day (1-31) |
+| 52 | 12 | Manufacturer/Model code | ASCII string |
+| 64+ | ... | Reserved/Unknown | - |
+
+**Example values:**
+- Balance trigger: 3.35V (0x0D16 = 3350mV)
+- Balance diff: 0.010V (0x000A = 10mV)
+- Heater start: 0°C (0x01F4 = 500 raw)
+- Heater stop: 10°C (0x0258 = 600 raw)
+- Full charge voltage: 56.80V (0x1630 = 5680cV)
+- Full charge current: 15.0A (0x05DC = 1500cA)
+- Serial: "UP16S0190001242250713001"
+- Mfg date: 2025-07-29
+- Manufacturer: "JBD481000000"
 
 ## Write Registers
 
