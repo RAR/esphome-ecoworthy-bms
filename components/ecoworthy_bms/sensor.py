@@ -144,6 +144,10 @@ CONF_DISCHARGE_OC_RECOVER_DELAY = "discharge_oc_recover_delay"
 CONF_DISCHARGE_OC2_TRIGGER = "discharge_oc2_trigger"
 CONF_DISCHARGE_OC2_DELAY = "discharge_oc2_delay"
 
+# Individual pack status (function 0x45) - non-aggregated limits
+CONF_INDIVIDUAL_CHARGE_CURRENT_LIMIT = "individual_charge_current_limit"
+CONF_INDIVIDUAL_DISCHARGE_CURRENT_LIMIT = "individual_discharge_current_limit"
+
 UNIT_AMPERE_HOURS = "Ah"
 UNIT_MINUTES = "min"
 UNIT_MICROOHM = "μΩ"
@@ -768,6 +772,21 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             state_class=STATE_CLASS_MEASUREMENT,
             icon="mdi:timer-outline",
         ),
+        # Individual pack status (function 0x45) - non-aggregated current limits
+        cv.Optional(CONF_INDIVIDUAL_CHARGE_CURRENT_LIMIT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
+        cv.Optional(CONF_INDIVIDUAL_DISCHARGE_CURRENT_LIMIT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:current-dc",
+        ),
         # Per-battery sensors for slave batteries (battery_2, battery_3, etc.)
         # Use battery index as key (2-16)
         cv.Optional(CONF_BATTERIES): cv.Schema({
@@ -1103,6 +1122,14 @@ async def to_code(config):
     if CONF_DISCHARGE_OC2_DELAY in config:
         sens = await sensor.new_sensor(config[CONF_DISCHARGE_OC2_DELAY])
         cg.add(hub.set_discharge_oc2_delay_sensor(sens))
+
+    # Individual pack status (function 0x45) - non-aggregated current limits
+    if CONF_INDIVIDUAL_CHARGE_CURRENT_LIMIT in config:
+        sens = await sensor.new_sensor(config[CONF_INDIVIDUAL_CHARGE_CURRENT_LIMIT])
+        cg.add(hub.set_individual_charge_current_limit_sensor(sens))
+    if CONF_INDIVIDUAL_DISCHARGE_CURRENT_LIMIT in config:
+        sens = await sensor.new_sensor(config[CONF_INDIVIDUAL_DISCHARGE_CURRENT_LIMIT])
+        cg.add(hub.set_individual_discharge_current_limit_sensor(sens))
 
     # Per-battery sensors for slave batteries
     if CONF_BATTERIES in config:

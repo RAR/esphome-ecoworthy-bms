@@ -272,6 +272,9 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_discharge_oc_recover_delay_sensor(sensor::Sensor *s) { discharge_oc_recover_delay_sensor_ = s; }
   void set_discharge_oc2_trigger_sensor(sensor::Sensor *s) { discharge_oc2_trigger_sensor_ = s; }
   void set_discharge_oc2_delay_sensor(sensor::Sensor *s) { discharge_oc2_delay_sensor_ = s; }
+  // Individual pack status (function 0x45) - non-aggregated current limits
+  void set_individual_charge_current_limit_sensor(sensor::Sensor *s) { individual_charge_current_limit_sensor_ = s; }
+  void set_individual_discharge_current_limit_sensor(sensor::Sensor *s) { individual_discharge_current_limit_sensor_ = s; }
 
   // Text sensors
   void set_operation_status_text_sensor(text_sensor::TextSensor *operation_status) { operation_status_text_sensor_ = operation_status; }
@@ -407,6 +410,9 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   sensor::Sensor *discharge_oc_recover_delay_sensor_{nullptr};
   sensor::Sensor *discharge_oc2_trigger_sensor_{nullptr};
   sensor::Sensor *discharge_oc2_delay_sensor_{nullptr};
+  // Individual pack status (function 0x45) - non-aggregated current limits
+  sensor::Sensor *individual_charge_current_limit_sensor_{nullptr};
+  sensor::Sensor *individual_discharge_current_limit_sensor_{nullptr};
 
   // Configuration sensors
   sensor::Sensor *balance_voltage_sensor_{nullptr};
@@ -480,6 +486,7 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void on_config_2000_data_(const std::vector<uint8_t> &data);
   void on_product_info_data_(const std::vector<uint8_t> &data);
   void on_protection_params_data_(const std::vector<uint8_t> &data);
+  void on_individual_pack_status_data_(const std::vector<uint8_t> &data);
   
   void reset_online_status_tracker_();
   void reset_online_status_tracker_(uint8_t battery_index);

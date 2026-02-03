@@ -6,6 +6,7 @@ This document describes the Modbus-RTU register map for Ecoworthy and JBD UP16S 
 
 - **Baud Rate**: 9600
 - **Data Bits**: 8, Stop Bits: 1, Parity: None
+- **Function Code 0x45**: Individual pack status (non-aggregated CCL/DCL)
 - **Function Code 0x78**: Read registers
 - **Function Code 0x79**: Write registers
 - **CRC**: CRC16 with polynomial=0xA001, initial=0xFFFF, LSB first
@@ -37,6 +38,18 @@ This document describes the Modbus-RTU register map for Ecoworthy and JBD UP16S 
 | N-1  | CRC low byte           |
 | N    | CRC high byte          |
 ```
+
+## Individual Pack Status (Function 0x45, 0x0000 - 0x0054)
+
+This command returns non-aggregated (individual) current limits for the battery directly connected to the port. When querying the master battery with function 0x78, the CCL/DCL values in Pack Status are aggregated across all batteries. Function 0x45 returns the master's own non-aggregated limits.
+
+**Note:** This command only works for the battery directly connected to the communication port, even on Bluetooth/WiFi UART ports.
+
+| Offset | Size | Description | Unit/Formula |
+|--------|------|-------------|--------------|
+| 0-95 | 96 | Unused (same as Pack Status) | - |
+| 96 | 2 | Individual charge current limit | A = val / 10 |
+| 98 | 2 | Individual discharge current limit | A = val / 10 |
 
 ## Pack Status (0x1000 - 0x10A0)
 

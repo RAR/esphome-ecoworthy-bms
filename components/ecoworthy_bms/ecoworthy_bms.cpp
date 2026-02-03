@@ -7,11 +7,15 @@ namespace ecoworthy_bms {
 
 static const char *const TAG = "ecoworthy_bms";
 
+static const uint8_t FUNCTION_INDIVIDUAL_PACK_STATUS = 0x45;
 static const uint8_t FUNCTION_READ = 0x78;
 static const uint8_t FUNCTION_WRITE = 0x79;
 static const uint8_t MAX_NO_RESPONSE_COUNT = 5;
 
 // Ecoworthy/JBD BMS register addresses
+// Individual Pack Status: 0x0000 - 0x0054 (function 0x45, non-aggregated CCL/DCL)
+static const uint16_t REG_INDIVIDUAL_STATUS_START = 0x0000;
+static const uint16_t REG_INDIVIDUAL_STATUS_END = 0x0054;
 // Pack Status: 0x1000 - 0x10A0
 static const uint16_t REG_PACK_STATUS_START = 0x1000;
 static const uint16_t REG_PACK_STATUS_END = 0x10A0;
@@ -94,7 +98,7 @@ void EcoworthyBms::update() {
     switch (this->request_step_) {
       case 0:
         // Request config block 1 (at startup and every 20 config cycles = ~60 seconds)
-        // Step 0 at counter 0, 4, 8, 12, 16, 20... so counter % 20 == 0 aligns
+        // Step 0 at counter 0, 5, 10, 15, 20... so counter % 20 == 0 aligns
         if (this->update_counter_ <= 1 || (this->update_counter_ % 20) == 0) {
           ESP_LOGD(TAG, "Polling 0x1C00 config block (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_CONFIG_1C00_START, REG_CONFIG_1C00_END);
@@ -102,7 +106,7 @@ void EcoworthyBms::update() {
         break;
       case 1:
         // Request config block 2 (at startup and every 40 config cycles = ~2 minutes)
-        // Step 1 at counter 1, 5, 9, 13... so (counter - 1) % 40 == 0 aligns
+        // Step 1 at counter 1, 6, 11... so (counter - 1) % 40 == 0 aligns
         if (this->update_counter_ <= 2 || ((this->update_counter_ - 1) % 40) == 0) {
           ESP_LOGD(TAG, "Polling 0x2000 config block (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_CONFIG_2000_START, REG_CONFIG_2000_END);
@@ -110,7 +114,7 @@ void EcoworthyBms::update() {
         break;
       case 2:
         // Request product info (at startup and every 240 config cycles = ~12 minutes)
-        // Step 2 at counter 2, 6, 10... so (counter - 2) % 240 == 0 aligns
+        // Step 2 at counter 2, 7, 12... so (counter - 2) % 240 == 0 aligns
         if (this->update_counter_ <= 3 || ((this->update_counter_ - 2) % 240) == 0) {
           ESP_LOGD(TAG, "Polling product info (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_PRODUCT_INFO_START, REG_PRODUCT_INFO_END);
@@ -118,15 +122,23 @@ void EcoworthyBms::update() {
         break;
       case 3:
         // Request protection parameters (at startup and every 120 config cycles = ~6 minutes)
-        // Step 3 at counter 3, 7, 11... so (counter - 3) % 120 == 0 aligns
+        // Step 3 at counter 3, 8, 13... so (counter - 3) % 120 == 0 aligns
         if (this->update_counter_ <= 4 || ((this->update_counter_ - 3) % 120) == 0) {
           ESP_LOGD(TAG, "Polling 0x1800 protection params (counter=%d)", this->update_counter_);
           this->send(FUNCTION_READ, REG_PROTECTION_PARAMS_START, REG_PROTECTION_PARAMS_END);
         }
         break;
+      case 4:
+        // Request individual pack status (function 0x45) for non-aggregated CCL/DCL
+        // Poll every 10 config cycles = ~30 seconds (more frequent since limits are dynamic)
+        if (this->update_counter_ <= 5 || ((this->update_counter_ - 4) % 10) == 0) {
+          ESP_LOGD(TAG, "Polling individual pack status 0x45 (counter=%d)", this->update_counter_);
+          this->send(FUNCTION_INDIVIDUAL_PACK_STATUS, REG_INDIVIDUAL_STATUS_START, REG_INDIVIDUAL_STATUS_END);
+        }
+        break;
     }
     
-    this->request_step_ = (this->request_step_ + 1) % 4;
+    this->request_step_ = (this->request_step_ + 1) % 5;
     this->current_battery_index_ = 0;  // Reset for next update cycle
     this->update_counter_++;
   }
@@ -159,6 +171,15 @@ void EcoworthyBms::on_modbus_data(const std::vector<uint8_t> &data) {
   if (function == FUNCTION_WRITE) {
     // Write acknowledgment - log success
     ESP_LOGD(TAG, "Write command acknowledged");
+    return;
+  }
+
+  if (function == FUNCTION_INDIVIDUAL_PACK_STATUS) {
+    // Function 0x45: Individual pack status (non-aggregated CCL/DCL)
+    // Only available for master (directly connected battery)
+    if (battery_index == 0) {
+      this->on_individual_pack_status_data_(data);
+    }
     return;
   }
 
@@ -1068,6 +1089,37 @@ void EcoworthyBms::on_protection_params_data_(const std::vector<uint8_t> &data) 
     ESP_LOGD(TAG, "Discharge OC: alarm=%.1fA, L1=%.1fA (%.1fs), L2=%.1fA (%dms)", 
              discharge_oc_alarm, discharge_oc_trigger, discharge_oc_delay, 
              discharge_oc2_trigger, (int)discharge_oc2_delay);
+  }
+}
+
+// Individual Pack Status (0x45) parsing - non-aggregated CCL/DCL
+void EcoworthyBms::on_individual_pack_status_data_(const std::vector<uint8_t> &data) {
+  const uint8_t *payload = &data[8];
+  size_t data_length = (uint16_t(data[6]) << 8) | uint16_t(data[7]);
+
+  auto get_16bit = [&](size_t i) -> uint16_t {
+    if (i + 1 >= data_length) return 0;
+    return (uint16_t(payload[i]) << 8) | uint16_t(payload[i + 1]);
+  };
+
+  ESP_LOGV(TAG, "Processing %d bytes of individual pack status (0x45) data", data_length);
+
+  // According to the reference implementation, the response is 100 bytes:
+  // - First 96 bytes are unused (same as PackStatus but we already have that)
+  // - Offset 96: Charge current limit (non-aggregated) - 2 bytes
+  // - Offset 98: Discharge current limit (non-aggregated) - 2 bytes
+  if (data_length >= 100) {
+    // CCL/DCL at offsets 96 and 98, in deciamps (A/10)
+    float individual_ccl = get_16bit(96) / 10.0f;
+    float individual_dcl = get_16bit(98) / 10.0f;
+    
+    this->publish_state_(this->individual_charge_current_limit_sensor_, individual_ccl);
+    this->publish_state_(this->individual_discharge_current_limit_sensor_, individual_dcl);
+    
+    ESP_LOGD(TAG, "Individual pack status: CCL=%.1fA, DCL=%.1fA (non-aggregated)", 
+             individual_ccl, individual_dcl);
+  } else {
+    ESP_LOGW(TAG, "Individual pack status response too short: %d bytes (expected 100)", data_length);
   }
 }
 
