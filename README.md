@@ -102,7 +102,54 @@ ecoworthy_bms:
   address: 0x01  # Battery address (1-15)
   ecoworthy_modbus_id: modbus0
   update_interval: 10s
+  battery_count: 1  # Number of batteries (1=master only, 2+=master+slaves)
 ```
+
+### Multi-Battery Configuration
+
+For systems with multiple batteries connected in parallel, you can poll all batteries from the master:
+
+```yaml
+ecoworthy_bms:
+  id: bms0
+  address: 0x01
+  ecoworthy_modbus_id: modbus0
+  update_interval: 10s
+  battery_count: 3  # Polls batteries at addresses 0x01, 0x02, 0x03
+
+sensor:
+  - platform: ecoworthy_bms
+    ecoworthy_bms_id: bms0
+    total_voltage:
+      name: "Battery 1 Voltage"
+    # Slave batteries
+    batteries:
+      2:
+        total_voltage:
+          name: "Battery 2 Voltage"
+        state_of_charge:
+          name: "Battery 2 SOC"
+      3:
+        total_voltage:
+          name: "Battery 3 Voltage"
+        state_of_charge:
+          name: "Battery 3 SOC"
+
+binary_sensor:
+  - platform: ecoworthy_bms
+    ecoworthy_bms_id: bms0
+    online_status:
+      name: "Battery 1 Online"
+    batteries:
+      2:
+        online_status:
+          name: "Battery 2 Online"
+      3:
+        online_status:
+          name: "Battery 3 Online"
+```
+
+**Note:** Per the protocol documentation, only Pack Status is available for slave batteries via RS485/RS232. Configuration parameters are only read from the master.
 
 ### Full Example
 
@@ -216,6 +263,16 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 | `configured_dcl` | A | Configured discharge current limit |
 | `shunt_resistance` | μΩ | Current shunt resistance |
 | `hardware_version` | - | Hardware version |
+
+### Slave Battery Sensors
+
+For multi-battery setups, the following sensors are available per slave battery:
+
+| Sensor Type | Available Sensors |
+|-------------|-------------------|
+| Sensor | `total_voltage`, `current`, `power`, `state_of_charge`, `state_of_health`, `remaining_capacity`, `power_tube_temperature`, `ambient_temperature`, `min_cell_voltage`, `max_cell_voltage`, `delta_cell_voltage`, `min_temperature`, `max_temperature` |
+| Binary Sensor | `online_status`, `charging`, `discharging` |
+| Text Sensor | `operation_status` |
 
 ### Switches (MOS Control)
 

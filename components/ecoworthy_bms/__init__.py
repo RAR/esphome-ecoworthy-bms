@@ -8,8 +8,10 @@ CODEOWNERS = ["@rar"]
 MULTI_CONF = True
 
 CONF_ECOWORTHY_BMS_ID = "ecoworthy_bms_id"
+CONF_BATTERY_COUNT = "battery_count"
 
 DEFAULT_ADDRESS = 0x01
+DEFAULT_BATTERY_COUNT = 1
 
 ecoworthy_bms_ns = cg.esphome_ns.namespace("ecoworthy_bms")
 EcoworthyBms = ecoworthy_bms_ns.class_("EcoworthyBms", cg.PollingComponent, ecoworthy_modbus.EcoworthyModbusDevice)
@@ -24,6 +26,7 @@ CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(EcoworthyBms),
+            cv.Optional(CONF_BATTERY_COUNT, default=DEFAULT_BATTERY_COUNT): cv.int_range(min=1, max=16),
         }
     )
     .extend(cv.polling_component_schema("10s"))
@@ -35,3 +38,4 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await ecoworthy_modbus.register_ecoworthy_modbus_device(var, config)
+    cg.add(var.set_battery_count(config[CONF_BATTERY_COUNT]))

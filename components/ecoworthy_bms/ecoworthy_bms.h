@@ -47,8 +47,41 @@ class DeepSleepButton : public button::Button, public Component {
   EcoworthyBms *parent_;
 };
 
+// Structure to hold per-battery sensors for slave batteries
+struct SlaveBatterySensors {
+  sensor::Sensor *total_voltage{nullptr};
+  sensor::Sensor *current{nullptr};
+  sensor::Sensor *power{nullptr};
+  sensor::Sensor *state_of_charge{nullptr};
+  sensor::Sensor *state_of_health{nullptr};
+  sensor::Sensor *remaining_capacity{nullptr};
+  sensor::Sensor *power_tube_temperature{nullptr};
+  sensor::Sensor *ambient_temperature{nullptr};
+  sensor::Sensor *min_cell_voltage{nullptr};
+  sensor::Sensor *max_cell_voltage{nullptr};
+  sensor::Sensor *delta_cell_voltage{nullptr};
+  sensor::Sensor *min_temperature{nullptr};
+  sensor::Sensor *max_temperature{nullptr};
+  binary_sensor::BinarySensor *online_status{nullptr};
+  binary_sensor::BinarySensor *charging{nullptr};
+  binary_sensor::BinarySensor *discharging{nullptr};
+  text_sensor::TextSensor *operation_status{nullptr};
+  uint8_t no_response_count{0};
+};
+
 class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::EcoworthyModbusDevice {
  public:
+  static constexpr uint8_t MAX_BATTERIES = 16;
+  
+  // Battery count configuration
+  void set_battery_count(uint8_t count) { battery_count_ = count; }
+  uint8_t get_battery_count() const { return battery_count_; }
+  
+  // Slave battery sensor setters (battery_index is 0-based, 0=master uses main sensors)
+  void set_slave_battery_sensor(uint8_t battery_index, const std::string &sensor_type, sensor::Sensor *s);
+  void set_slave_battery_binary_sensor(uint8_t battery_index, const std::string &sensor_type, binary_sensor::BinarySensor *bs);
+  void set_slave_battery_text_sensor(uint8_t battery_index, const std::string &sensor_type, text_sensor::TextSensor *ts);
+  
   // Binary sensors
   void set_online_status_binary_sensor(binary_sensor::BinarySensor *online_status) {
     online_status_binary_sensor_ = online_status;
@@ -286,6 +319,11 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   uint8_t no_response_count_{0};
   uint32_t update_counter_{0};
   uint8_t request_step_{0};
+  
+  // Multi-battery support
+  uint8_t battery_count_{1};
+  uint8_t current_battery_index_{0};  // Which battery we're currently polling (0 = master)
+  SlaveBatterySensors slave_batteries_[MAX_BATTERIES];  // Index 0 unused (master uses main sensors)
 
   // Current MOS states
   bool charge_mos_state_{false};
@@ -295,14 +333,17 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void publish_state_(sensor::Sensor *sensor, float value);
   void publish_state_(text_sensor::TextSensor *text_sensor, const std::string &state);
   
-  void on_pack_status_data_(const std::vector<uint8_t> &data);
+  void on_pack_status_data_(const std::vector<uint8_t> &data, uint8_t battery_index);
   void on_config_1c00_data_(const std::vector<uint8_t> &data);
   void on_config_2000_data_(const std::vector<uint8_t> &data);
   void on_product_info_data_(const std::vector<uint8_t> &data);
   
   void reset_online_status_tracker_();
+  void reset_online_status_tracker_(uint8_t battery_index);
   void track_online_status_();
+  void track_online_status_(uint8_t battery_index);
   void publish_device_unavailable_();
+  void publish_device_unavailable_(uint8_t battery_index);
   
   std::string decode_operation_status_(uint16_t status);
   std::string decode_fault_(uint32_t fault);

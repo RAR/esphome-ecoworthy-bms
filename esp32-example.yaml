@@ -52,6 +52,9 @@ ecoworthy_bms:
   address: 0x01
   ecoworthy_modbus_id: modbus0
   update_interval: 10s
+  # Number of batteries in the pack (1 = master only, 2+ = master + slaves)
+  # Slaves are addressed sequentially starting from master address
+  battery_count: 1
 
 binary_sensor:
   - platform: ecoworthy_bms
@@ -68,6 +71,15 @@ binary_sensor:
       name: "${name} discharging switch"
     balancing:
       name: "${name} balancing"
+    # Uncomment below to add slave battery binary sensors (requires battery_count >= 2)
+    # batteries:
+    #   2:
+    #     online_status:
+    #       name: "${name} battery 2 online status"
+    #     charging:
+    #       name: "${name} battery 2 charging"
+    #     discharging:
+    #       name: "${name} battery 2 discharging"
 
 sensor:
   - platform: ecoworthy_bms
@@ -218,6 +230,37 @@ sensor:
       name: "${name} configured DVL"
     configured_dcl:
       name: "${name} configured DCL"
+
+    # Uncomment below to add slave battery sensors (requires battery_count >= 2)
+    # batteries:
+    #   2:
+    #     total_voltage:
+    #       name: "${name} battery 2 voltage"
+    #     current:
+    #       name: "${name} battery 2 current"
+    #     power:
+    #       name: "${name} battery 2 power"
+    #     state_of_charge:
+    #       name: "${name} battery 2 SOC"
+    #     state_of_health:
+    #       name: "${name} battery 2 SOH"
+    #     remaining_capacity:
+    #       name: "${name} battery 2 remaining capacity"
+    #     power_tube_temperature:
+    #       name: "${name} battery 2 MOSFET temp"
+    #     ambient_temperature:
+    #       name: "${name} battery 2 ambient temp"
+    #     min_cell_voltage:
+    #       name: "${name} battery 2 min cell voltage"
+    #     max_cell_voltage:
+    #       name: "${name} battery 2 max cell voltage"
+    #     delta_cell_voltage:
+    #       name: "${name} battery 2 delta cell voltage"
+    #   3:
+    #     total_voltage:
+    #       name: "${name} battery 3 voltage"
+    #     state_of_charge:
+    #       name: "${name} battery 3 SOC"
 
 text_sensor:
   - platform: ecoworthy_bms

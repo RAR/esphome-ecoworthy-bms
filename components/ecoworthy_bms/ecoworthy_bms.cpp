@@ -48,42 +48,65 @@ void EcoworthyBms::dump_config() {
 float EcoworthyBms::get_setup_priority() const { return setup_priority::DATA; }
 
 void EcoworthyBms::update() {
+  // Check for master timeout
   if (this->no_response_count_ >= MAX_NO_RESPONSE_COUNT) {
     this->publish_device_unavailable_();
     ESP_LOGW(TAG, "No response from BMS (address 0x%02X)", this->address_);
   }
+  
+  // Check for slave battery timeouts
+  for (uint8_t i = 1; i < this->battery_count_; i++) {
+    if (this->slave_batteries_[i].no_response_count >= MAX_NO_RESPONSE_COUNT) {
+      this->publish_device_unavailable_(i);
+    }
+  }
 
   this->track_online_status_();
   this->no_response_count_++;
-
-  // Cycle through different register blocks
-  switch (this->request_step_) {
-    case 0:
-      // Request pack status data (every update)
-      this->send(FUNCTION_READ, REG_PACK_STATUS_START, REG_PACK_STATUS_END);
-      break;
-    case 1:
-      // Request config block 1 (every 5th update)
-      if ((this->update_counter_ % 5) == 0) {
-        this->send(FUNCTION_READ, REG_CONFIG_1C00_START, REG_CONFIG_1C00_END);
-      }
-      break;
-    case 2:
-      // Request config block 2 (every 10th update)
-      if ((this->update_counter_ % 10) == 0) {
-        this->send(FUNCTION_READ, REG_CONFIG_2000_START, REG_CONFIG_2000_END);
-      }
-      break;
-    case 3:
-      // Request product info (once at startup and every 60 updates)
-      if (this->update_counter_ == 0 || (this->update_counter_ % 60) == 0) {
-        this->send(FUNCTION_READ, REG_PRODUCT_INFO_START, REG_PRODUCT_INFO_END);
-      }
-      break;
+  
+  // Track slave battery timeouts
+  for (uint8_t i = 1; i < this->battery_count_; i++) {
+    this->track_online_status_(i);
+    this->slave_batteries_[i].no_response_count++;
   }
 
-  this->request_step_ = (this->request_step_ + 1) % 4;
-  this->update_counter_++;
+  // For multi-battery: poll each battery in sequence, then config blocks for master only
+  // Pattern: battery_1 status, battery_2 status, ..., battery_n status, [config blocks for master]
+  
+  if (this->current_battery_index_ < this->battery_count_) {
+    // Request pack status for current battery
+    uint8_t battery_address = this->address_ + this->current_battery_index_;
+    ESP_LOGD(TAG, "Requesting pack status for battery %d (address 0x%02X)", 
+             this->current_battery_index_ + 1, battery_address);
+    this->parent_->send(battery_address, FUNCTION_READ, REG_PACK_STATUS_START, REG_PACK_STATUS_END);
+    this->current_battery_index_++;
+  } else {
+    // After polling all batteries, poll config blocks for master
+    switch (this->request_step_) {
+      case 0:
+        // Request config block 1 (every 5th update)
+        if ((this->update_counter_ % 5) == 0) {
+          this->send(FUNCTION_READ, REG_CONFIG_1C00_START, REG_CONFIG_1C00_END);
+        }
+        break;
+      case 1:
+        // Request config block 2 (every 10th update)
+        if ((this->update_counter_ % 10) == 0) {
+          this->send(FUNCTION_READ, REG_CONFIG_2000_START, REG_CONFIG_2000_END);
+        }
+        break;
+      case 2:
+        // Request product info (once at startup and every 60 updates)
+        if (this->update_counter_ == 0 || (this->update_counter_ % 60) == 0) {
+          this->send(FUNCTION_READ, REG_PRODUCT_INFO_START, REG_PRODUCT_INFO_END);
+        }
+        break;
+    }
+    
+    this->request_step_ = (this->request_step_ + 1) % 3;
+    this->current_battery_index_ = 0;  // Reset for next update cycle
+    this->update_counter_++;
+  }
 }
 
 void EcoworthyBms::on_modbus_data(const std::vector<uint8_t> &data) {
@@ -95,13 +118,20 @@ void EcoworthyBms::on_modbus_data(const std::vector<uint8_t> &data) {
   uint8_t address = data[0];
   uint8_t function = data[1];
 
-  // Check if this response is for this device
-  if (address != this->address_) {
-    return;  // Not for this device
+  // Calculate battery index from address (0 = master, 1+ = slaves)
+  uint8_t battery_index = address - this->address_;
+  
+  // Check if this response is for one of our batteries
+  if (battery_index >= this->battery_count_) {
+    return;  // Not for any of our batteries
   }
 
-  // Reset the no-response counter since we got a valid response for this address
-  this->reset_online_status_tracker_();
+  // Reset the no-response counter for this battery
+  if (battery_index == 0) {
+    this->reset_online_status_tracker_();
+  } else {
+    this->reset_online_status_tracker_(battery_index);
+  }
 
   if (function == FUNCTION_WRITE) {
     // Write acknowledgment - log success
@@ -119,20 +149,28 @@ void EcoworthyBms::on_modbus_data(const std::vector<uint8_t> &data) {
   uint16_t end_addr = (uint16_t(data[4]) << 8) | uint16_t(data[5]);
   uint16_t data_length = (uint16_t(data[6]) << 8) | uint16_t(data[7]);
 
-  ESP_LOGD(TAG, "Received response: start=0x%04X, end=0x%04X, len=%d", start_addr, end_addr, data_length);
+  ESP_LOGD(TAG, "Received response from battery %d (addr 0x%02X): start=0x%04X, end=0x%04X, len=%d", 
+           battery_index + 1, address, start_addr, end_addr, data_length);
 
   if (start_addr == REG_PACK_STATUS_START) {
-    this->on_pack_status_data_(data);
+    this->on_pack_status_data_(data, battery_index);
   } else if (start_addr == REG_CONFIG_1C00_START) {
-    this->on_config_1c00_data_(data);
+    // Config blocks only for master
+    if (battery_index == 0) {
+      this->on_config_1c00_data_(data);
+    }
   } else if (start_addr == REG_CONFIG_2000_START) {
-    this->on_config_2000_data_(data);
+    if (battery_index == 0) {
+      this->on_config_2000_data_(data);
+    }
   } else if (start_addr == REG_PRODUCT_INFO_START) {
-    this->on_product_info_data_(data);
+    if (battery_index == 0) {
+      this->on_product_info_data_(data);
+    }
   }
 }
 
-void EcoworthyBms::on_pack_status_data_(const std::vector<uint8_t> &data) {
+void EcoworthyBms::on_pack_status_data_(const std::vector<uint8_t> &data, uint8_t battery_index) {
   // Data starts at offset 8 (after header: addr + func + start_addr + end_addr + data_len)
   const uint8_t *payload = &data[8];
   size_t data_length = (uint16_t(data[6]) << 8) | uint16_t(data[7]);
@@ -148,212 +186,185 @@ void EcoworthyBms::on_pack_status_data_(const std::vector<uint8_t> &data) {
            (uint32_t(payload[i + 2]) << 8) | uint32_t(payload[i + 3]);
   };
 
-  ESP_LOGV(TAG, "Processing %d bytes of pack status data", data_length);
+  ESP_LOGV(TAG, "Processing %d bytes of pack status data for battery %d", data_length, battery_index + 1);
 
-  // Based on the gist register map for Pack Status (0x1000)
-  // Offset 0: pack voltage, V = val / 100
+  // Parse common values for both master and slaves
   float total_voltage = get_16bit(0) * 0.01f;
-  this->publish_state_(this->total_voltage_sensor_, total_voltage);
-
-  // Offset 2: unknown (slave pack voltage)
-  
-  // Offset 4: pack current (4 bytes), A = (val - 300000) / 100
   uint32_t current_raw = get_32bit(4);
   float current = ((int32_t)current_raw - 300000) / 100.0f;
-  this->publish_state_(this->current_sensor_, current);
-
-  // Calculate power
   float power = total_voltage * current;
-  this->publish_state_(this->power_sensor_, power);
-  this->publish_state_(this->charging_power_sensor_, power > 0 ? power : 0);
-  this->publish_state_(this->discharging_power_sensor_, power < 0 ? -power : 0);
-
-  // Offset 8: state of charge in 0.01% units
   float soc = get_16bit(8) / 100.0f;
-  this->publish_state_(this->state_of_charge_sensor_, soc);
-
-  // Offset 10: residual pack capacity, Ah = val / 100
-  float remaining_capacity = get_16bit(10) / 100.0f;
-  this->publish_state_(this->remaining_capacity_sensor_, remaining_capacity);
-
-  // Offset 12: full pack capacity, Ah = val / 100
-  float full_capacity = get_16bit(12) / 100.0f;
-  this->publish_state_(this->full_capacity_sensor_, full_capacity);
-
-  // Offset 14: rated pack capacity, Ah = val / 100
-  float rated_capacity = get_16bit(14) / 100.0f;
-  this->publish_state_(this->rated_capacity_sensor_, rated_capacity);
-
-  // Offset 16: MOSFET (power tube) temperature: °C = (val - 500) / 10
-  float power_tube_temp = (get_16bit(16) - 500) / 10.0f;
-  this->publish_state_(this->power_tube_temperature_sensor_, power_tube_temp);
-
-  // Offset 18: ambient temperature: °C = (val - 500) / 10
-  float ambient_temp = (get_16bit(18) - 500) / 10.0f;
-  this->publish_state_(this->ambient_temperature_sensor_, ambient_temp);
-
-  // Offset 20: Operation status (0: Idle, 1: Charging, 2: Discharging)
-  uint16_t operation_status = get_16bit(20);
-  this->publish_state_(this->operation_status_text_sensor_, this->decode_operation_status_(operation_status));
-  this->publish_state_(this->charging_binary_sensor_, operation_status == 1);
-  this->publish_state_(this->discharging_binary_sensor_, operation_status == 2);
-
-  // Offset 22: state of health, %
   float soh = get_16bit(22);
-  this->publish_state_(this->state_of_health_sensor_, soh);
-
-  // Offset 24: level 2 protected state fault code (4 bytes)
-  uint32_t fault = get_32bit(24);
-  this->publish_state_(this->fault_bitmask_sensor_, (float)fault);
-  this->publish_state_(this->fault_text_sensor_, this->decode_fault_(fault));
-
-  // Offset 28: level 1 alarm code (4 bytes)
-  uint32_t alarm = get_32bit(28);
-  this->publish_state_(this->alarm_bitmask_sensor_, (float)alarm);
-  this->publish_state_(this->alarm_text_sensor_, this->decode_alarm_(alarm));
-
-  // Offset 32: MOSFET state bitmask
-  uint16_t mosfet_status = get_16bit(32);
-  this->publish_state_(this->mosfet_status_bitmask_sensor_, (float)mosfet_status);
-  
-  // Update MOS states for binary sensors
-  this->discharge_mos_state_ = (mosfet_status & 0x0001) != 0;
-  this->charge_mos_state_ = (mosfet_status & 0x0002) != 0;
-  
-  this->publish_state_(this->discharging_switch_binary_sensor_, this->discharge_mos_state_);
-  this->publish_state_(this->charging_switch_binary_sensor_, this->charge_mos_state_);
-  
-  // Update switch states (JK-BMS naming: charging/discharging)
-  if (this->charging_switch_ != nullptr) {
-    this->charging_switch_->publish_state(this->charge_mos_state_);
-  }
-  if (this->discharging_switch_ != nullptr) {
-    this->discharging_switch_->publish_state(this->discharge_mos_state_);
-  }
-
-  // Offset 34: bitmask: 0: Charger 1: LOAD 2: SW
-  
-  // Offset 36: Number of charge cycles
-  uint16_t cycle_count = get_16bit(36);
-  this->publish_state_(this->cycle_count_sensor_, (float)cycle_count);
-
-  // Offset 38: cell # with highest voltage
-  uint16_t max_cell_num = get_16bit(38);
-  this->publish_state_(this->max_voltage_cell_sensor_, (float)max_cell_num);
-
-  // Offset 40: highest cell voltage, mV
+  float remaining_capacity = get_16bit(10) / 100.0f;
+  float power_tube_temp = (get_16bit(16) - 500) / 10.0f;
+  float ambient_temp = (get_16bit(18) - 500) / 10.0f;
+  uint16_t operation_status = get_16bit(20);
   float max_cell_voltage = get_16bit(40) * 0.001f;
-  this->publish_state_(this->max_cell_voltage_sensor_, max_cell_voltage);
-
-  // Offset 42: cell # with lowest voltage
-  uint16_t min_cell_num = get_16bit(42);
-  this->publish_state_(this->min_voltage_cell_sensor_, (float)min_cell_num);
-
-  // Offset 44: lowest cell voltage, mV
   float min_cell_voltage = get_16bit(44) * 0.001f;
-  this->publish_state_(this->min_cell_voltage_sensor_, min_cell_voltage);
-
-  // Offset 46: avg cell voltage, mV
-  float avg_cell_voltage = get_16bit(46) * 0.001f;
-  this->publish_state_(this->average_cell_voltage_sensor_, avg_cell_voltage);
-
-  // Calculate delta
-  this->publish_state_(this->delta_cell_voltage_sensor_, max_cell_voltage - min_cell_voltage);
-
-  // Offset 48: cell temp sensor # with highest temperature
-  // Offset 50: highest cell temperature: °C = (val - 500) / 10
-  float max_temp = (get_16bit(50) - 500) / 10.0f;
-  this->publish_state_(this->max_temperature_sensor_, max_temp);
-
-  // Offset 52: cell temp sensor # with lowest temperature
-  // Offset 54: lowest cell temperature: °C = (val - 500) / 10
+  float delta_cell_voltage = max_cell_voltage - min_cell_voltage;
   float min_temp = (get_16bit(54) - 500) / 10.0f;
-  this->publish_state_(this->min_temperature_sensor_, min_temp);
+  float max_temp = (get_16bit(50) - 500) / 10.0f;
 
-  // Offset 56: avg cell temperature: °C = (val - 500) / 10
-  float avg_temp = (get_16bit(56) - 500) / 10.0f;
-  this->publish_state_(this->avg_temperature_sensor_, avg_temp);
-
-  // Offset 58: Charge Voltage Limit ("MAX CHG CV"), V = val / 10
-  float cvl = get_16bit(58) / 10.0f;
-  this->publish_state_(this->charge_voltage_limit_sensor_, cvl);
-
-  // Offset 60: Charge Current Limit, A = val / 10
-  float ccl = get_16bit(60) / 10.0f;
-  this->publish_state_(this->charge_current_limit_sensor_, ccl);
-
-  // Offset 62: Discharge Voltage Limit ("MIN DSG DV"), V = val / 10
-  float dvl = get_16bit(62) / 10.0f;
-  this->publish_state_(this->discharge_voltage_limit_sensor_, dvl);
-
-  // Offset 64: Discharge Current Limit, A = val / 10
-  float dcl = get_16bit(64) / 10.0f;
-  this->publish_state_(this->discharge_current_limit_sensor_, dcl);
-
-  // Offset 66: number of cells
-  uint16_t cell_count = get_16bit(66);
-  this->publish_state_(this->cell_count_sensor_, (float)cell_count);
-
-  // Offset 68: cell voltages start (2 bytes each, in mV)
-  size_t cell_offset = 68;
-  float sum_cell_voltage = 0.0f;
-  uint8_t valid_cells = 0;
-  
-  for (uint8_t i = 0; i < std::min((uint16_t)16, cell_count); i++) {
-    uint16_t cell_mv = get_16bit(cell_offset + i * 2);
-    if (cell_mv > 0 && cell_mv < 5000) {  // Valid range check
-      float cell_voltage = cell_mv * 0.001f;
-      this->publish_state_(this->cells_[i].cell_voltage_sensor_, cell_voltage);
-      sum_cell_voltage += cell_voltage;
-      valid_cells++;
-    }
-  }
-
-  // Offset after cells: number of temperature sensors
-  size_t temp_offset = cell_offset + cell_count * 2;
-  if (temp_offset + 2 <= data_length) {
-    uint16_t temp_count = get_16bit(temp_offset);
-    this->publish_state_(this->temperature_sensor_count_sensor_, (float)temp_count);
+  if (battery_index == 0) {
+    // Master battery - use all the original sensors
+    this->publish_state_(this->total_voltage_sensor_, total_voltage);
+    this->publish_state_(this->current_sensor_, current);
+    this->publish_state_(this->power_sensor_, power);
+    this->publish_state_(this->charging_power_sensor_, power > 0 ? power : 0);
+    this->publish_state_(this->discharging_power_sensor_, power < 0 ? -power : 0);
+    this->publish_state_(this->state_of_charge_sensor_, soc);
+    this->publish_state_(this->remaining_capacity_sensor_, remaining_capacity);
     
-    // Temperature values
-    size_t temp_values_offset = temp_offset + 2;
-    for (uint8_t i = 0; i < std::min((uint16_t)4, temp_count); i++) {
-      if (temp_values_offset + i * 2 + 2 <= data_length) {
-        float temp = (get_16bit(temp_values_offset + i * 2) - 500) / 10.0f;
-        this->publish_state_(this->temperatures_[i].temperature_sensor_, temp);
+    float full_capacity = get_16bit(12) / 100.0f;
+    this->publish_state_(this->full_capacity_sensor_, full_capacity);
+    
+    float rated_capacity = get_16bit(14) / 100.0f;
+    this->publish_state_(this->rated_capacity_sensor_, rated_capacity);
+    
+    this->publish_state_(this->power_tube_temperature_sensor_, power_tube_temp);
+    this->publish_state_(this->ambient_temperature_sensor_, ambient_temp);
+    
+    this->publish_state_(this->operation_status_text_sensor_, this->decode_operation_status_(operation_status));
+    this->publish_state_(this->charging_binary_sensor_, operation_status == 1);
+    this->publish_state_(this->discharging_binary_sensor_, operation_status == 2);
+    
+    this->publish_state_(this->state_of_health_sensor_, soh);
+    
+    uint32_t fault = get_32bit(24);
+    this->publish_state_(this->fault_bitmask_sensor_, (float)fault);
+    this->publish_state_(this->fault_text_sensor_, this->decode_fault_(fault));
+    
+    uint32_t alarm = get_32bit(28);
+    this->publish_state_(this->alarm_bitmask_sensor_, (float)alarm);
+    this->publish_state_(this->alarm_text_sensor_, this->decode_alarm_(alarm));
+    
+    uint16_t mosfet_status = get_16bit(32);
+    this->publish_state_(this->mosfet_status_bitmask_sensor_, (float)mosfet_status);
+    
+    this->discharge_mos_state_ = (mosfet_status & 0x0001) != 0;
+    this->charge_mos_state_ = (mosfet_status & 0x0002) != 0;
+    
+    this->publish_state_(this->discharging_switch_binary_sensor_, this->discharge_mos_state_);
+    this->publish_state_(this->charging_switch_binary_sensor_, this->charge_mos_state_);
+    
+    if (this->charging_switch_ != nullptr) {
+      this->charging_switch_->publish_state(this->charge_mos_state_);
+    }
+    if (this->discharging_switch_ != nullptr) {
+      this->discharging_switch_->publish_state(this->discharge_mos_state_);
+    }
+    
+    uint16_t cycle_count = get_16bit(36);
+    this->publish_state_(this->cycle_count_sensor_, (float)cycle_count);
+    
+    uint16_t max_cell_num = get_16bit(38);
+    this->publish_state_(this->max_voltage_cell_sensor_, (float)max_cell_num);
+    this->publish_state_(this->max_cell_voltage_sensor_, max_cell_voltage);
+    
+    uint16_t min_cell_num = get_16bit(42);
+    this->publish_state_(this->min_voltage_cell_sensor_, (float)min_cell_num);
+    this->publish_state_(this->min_cell_voltage_sensor_, min_cell_voltage);
+    
+    float avg_cell_voltage = get_16bit(46) * 0.001f;
+    this->publish_state_(this->average_cell_voltage_sensor_, avg_cell_voltage);
+    this->publish_state_(this->delta_cell_voltage_sensor_, delta_cell_voltage);
+    
+    this->publish_state_(this->max_temperature_sensor_, max_temp);
+    this->publish_state_(this->min_temperature_sensor_, min_temp);
+    
+    float avg_temp = (get_16bit(56) - 500) / 10.0f;
+    this->publish_state_(this->avg_temperature_sensor_, avg_temp);
+    
+    float cvl = get_16bit(58) / 10.0f;
+    this->publish_state_(this->charge_voltage_limit_sensor_, cvl);
+    
+    float ccl = get_16bit(60) / 10.0f;
+    this->publish_state_(this->charge_current_limit_sensor_, ccl);
+    
+    float dvl = get_16bit(62) / 10.0f;
+    this->publish_state_(this->discharge_voltage_limit_sensor_, dvl);
+    
+    float dcl = get_16bit(64) / 10.0f;
+    this->publish_state_(this->discharge_current_limit_sensor_, dcl);
+    
+    uint16_t cell_count = get_16bit(66);
+    this->publish_state_(this->cell_count_sensor_, (float)cell_count);
+    
+    // Cell voltages
+    size_t cell_offset = 68;
+    for (uint8_t i = 0; i < std::min((uint16_t)16, cell_count); i++) {
+      uint16_t cell_mv = get_16bit(cell_offset + i * 2);
+      if (cell_mv > 0 && cell_mv < 5000) {
+        float cell_voltage = cell_mv * 0.001f;
+        this->publish_state_(this->cells_[i].cell_voltage_sensor_, cell_voltage);
       }
     }
-
-    // After temperatures: balance status bitmask, firmware version, serial number, etc.
-    size_t after_temps_offset = temp_values_offset + temp_count * 2;
     
-    // Skip unknown (2 bytes), then balance status (2 bytes)
-    if (after_temps_offset + 4 <= data_length) {
-      uint16_t balance_status = get_16bit(after_temps_offset + 2);
-      this->publish_state_(this->balancing_bitmask_sensor_, (float)balance_status);
-      this->publish_state_(this->balancing_binary_sensor_, balance_status != 0);
-    }
-
-    // Firmware version (2 bytes after balance status)
-    if (after_temps_offset + 6 <= data_length) {
-      uint16_t fw_raw = get_16bit(after_temps_offset + 4);
-      float fw_major = (fw_raw >> 8) & 0xFF;
-      float fw_minor = fw_raw & 0xFF;
-      char fw_str[16];
-      snprintf(fw_str, sizeof(fw_str), "%d.%d", (int)fw_major, (int)fw_minor);
-      this->publish_state_(this->firmware_text_sensor_, std::string(fw_str));
-    }
-
-    // Serial number (30 bytes after firmware version)
-    if (after_temps_offset + 36 <= data_length) {
-      std::string serial((char *)&payload[after_temps_offset + 6], 30);
-      // Trim null characters
-      size_t end = serial.find('\0');
-      if (end != std::string::npos) {
-        serial = serial.substr(0, end);
+    // Temperature sensors
+    size_t temp_offset = cell_offset + cell_count * 2;
+    if (temp_offset + 2 <= data_length) {
+      uint16_t temp_count = get_16bit(temp_offset);
+      this->publish_state_(this->temperature_sensor_count_sensor_, (float)temp_count);
+      
+      size_t temp_values_offset = temp_offset + 2;
+      for (uint8_t i = 0; i < std::min((uint16_t)4, temp_count); i++) {
+        if (temp_values_offset + i * 2 + 2 <= data_length) {
+          float temp = (get_16bit(temp_values_offset + i * 2) - 500) / 10.0f;
+          this->publish_state_(this->temperatures_[i].temperature_sensor_, temp);
+        }
       }
-      this->publish_state_(this->serial_number_text_sensor_, serial);
+      
+      size_t after_temps_offset = temp_values_offset + temp_count * 2;
+      
+      if (after_temps_offset + 4 <= data_length) {
+        uint16_t balance_status = get_16bit(after_temps_offset + 2);
+        this->publish_state_(this->balancing_bitmask_sensor_, (float)balance_status);
+        this->publish_state_(this->balancing_binary_sensor_, balance_status != 0);
+      }
+      
+      if (after_temps_offset + 6 <= data_length) {
+        uint16_t fw_raw = get_16bit(after_temps_offset + 4);
+        float fw_major = (fw_raw >> 8) & 0xFF;
+        float fw_minor = fw_raw & 0xFF;
+        char fw_str[16];
+        snprintf(fw_str, sizeof(fw_str), "%d.%d", (int)fw_major, (int)fw_minor);
+        this->publish_state_(this->firmware_text_sensor_, std::string(fw_str));
+      }
+      
+      if (after_temps_offset + 36 <= data_length) {
+        std::string serial((char *)&payload[after_temps_offset + 6], 30);
+        size_t end = serial.find('\0');
+        if (end != std::string::npos) {
+          serial = serial.substr(0, end);
+        }
+        this->publish_state_(this->serial_number_text_sensor_, serial);
+      }
     }
+  } else {
+    // Slave battery - use the per-battery sensors
+    SlaveBatterySensors &slave = this->slave_batteries_[battery_index];
+    
+    this->publish_state_(slave.total_voltage, total_voltage);
+    this->publish_state_(slave.current, current);
+    this->publish_state_(slave.power, power);
+    this->publish_state_(slave.state_of_charge, soc);
+    this->publish_state_(slave.state_of_health, soh);
+    this->publish_state_(slave.remaining_capacity, remaining_capacity);
+    this->publish_state_(slave.power_tube_temperature, power_tube_temp);
+    this->publish_state_(slave.ambient_temperature, ambient_temp);
+    this->publish_state_(slave.min_cell_voltage, min_cell_voltage);
+    this->publish_state_(slave.max_cell_voltage, max_cell_voltage);
+    this->publish_state_(slave.delta_cell_voltage, delta_cell_voltage);
+    this->publish_state_(slave.min_temperature, min_temp);
+    this->publish_state_(slave.max_temperature, max_temp);
+    
+    this->publish_state_(slave.online_status, true);
+    this->publish_state_(slave.charging, operation_status == 1);
+    this->publish_state_(slave.discharging, operation_status == 2);
+    this->publish_state_(slave.operation_status, this->decode_operation_status_(operation_status));
+    
+    ESP_LOGD(TAG, "Battery %d: %.2fV, %.2fA, %.1f%% SOC", 
+             battery_index + 1, total_voltage, current, soc);
   }
 }
 
@@ -450,14 +461,74 @@ void EcoworthyBms::reset_online_status_tracker_() {
   this->publish_state_(this->online_status_binary_sensor_, true);
 }
 
+void EcoworthyBms::reset_online_status_tracker_(uint8_t battery_index) {
+  if (battery_index > 0 && battery_index < MAX_BATTERIES) {
+    this->slave_batteries_[battery_index].no_response_count = 0;
+    this->publish_state_(this->slave_batteries_[battery_index].online_status, true);
+  }
+}
+
 void EcoworthyBms::track_online_status_() {
   if (this->no_response_count_ < MAX_NO_RESPONSE_COUNT) {
     this->publish_state_(this->online_status_binary_sensor_, true);
   }
 }
 
+void EcoworthyBms::track_online_status_(uint8_t battery_index) {
+  if (battery_index > 0 && battery_index < MAX_BATTERIES) {
+    if (this->slave_batteries_[battery_index].no_response_count < MAX_NO_RESPONSE_COUNT) {
+      this->publish_state_(this->slave_batteries_[battery_index].online_status, true);
+    }
+  }
+}
+
 void EcoworthyBms::publish_device_unavailable_() {
   this->publish_state_(this->online_status_binary_sensor_, false);
+}
+
+void EcoworthyBms::publish_device_unavailable_(uint8_t battery_index) {
+  if (battery_index > 0 && battery_index < MAX_BATTERIES) {
+    SlaveBatterySensors &slave = this->slave_batteries_[battery_index];
+    this->publish_state_(slave.online_status, false);
+    ESP_LOGW(TAG, "No response from battery %d (address 0x%02X)", 
+             battery_index + 1, this->address_ + battery_index);
+  }
+}
+
+// Setter implementations for slave battery sensors
+void EcoworthyBms::set_slave_battery_sensor(uint8_t battery_index, const std::string &sensor_type, sensor::Sensor *s) {
+  if (battery_index == 0 || battery_index >= MAX_BATTERIES) return;
+  SlaveBatterySensors &slave = this->slave_batteries_[battery_index];
+  
+  if (sensor_type == "total_voltage") slave.total_voltage = s;
+  else if (sensor_type == "current") slave.current = s;
+  else if (sensor_type == "power") slave.power = s;
+  else if (sensor_type == "state_of_charge") slave.state_of_charge = s;
+  else if (sensor_type == "state_of_health") slave.state_of_health = s;
+  else if (sensor_type == "remaining_capacity") slave.remaining_capacity = s;
+  else if (sensor_type == "power_tube_temperature") slave.power_tube_temperature = s;
+  else if (sensor_type == "ambient_temperature") slave.ambient_temperature = s;
+  else if (sensor_type == "min_cell_voltage") slave.min_cell_voltage = s;
+  else if (sensor_type == "max_cell_voltage") slave.max_cell_voltage = s;
+  else if (sensor_type == "delta_cell_voltage") slave.delta_cell_voltage = s;
+  else if (sensor_type == "min_temperature") slave.min_temperature = s;
+  else if (sensor_type == "max_temperature") slave.max_temperature = s;
+}
+
+void EcoworthyBms::set_slave_battery_binary_sensor(uint8_t battery_index, const std::string &sensor_type, binary_sensor::BinarySensor *bs) {
+  if (battery_index == 0 || battery_index >= MAX_BATTERIES) return;
+  SlaveBatterySensors &slave = this->slave_batteries_[battery_index];
+  
+  if (sensor_type == "online_status") slave.online_status = bs;
+  else if (sensor_type == "charging") slave.charging = bs;
+  else if (sensor_type == "discharging") slave.discharging = bs;
+}
+
+void EcoworthyBms::set_slave_battery_text_sensor(uint8_t battery_index, const std::string &sensor_type, text_sensor::TextSensor *ts) {
+  if (battery_index == 0 || battery_index >= MAX_BATTERIES) return;
+  SlaveBatterySensors &slave = this->slave_batteries_[battery_index];
+  
+  if (sensor_type == "operation_status") slave.operation_status = ts;
 }
 
 // Config block 1 (0x1C00) parsing

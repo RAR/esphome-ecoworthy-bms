@@ -19,6 +19,16 @@ CONF_BALANCE_MODE = "balance_mode"
 CONF_CAN_PROTOCOL = "can_protocol"
 CONF_RS485_PROTOCOL = "rs485_protocol"
 CONF_HARDWARE_VERSION = "hardware_version"
+CONF_BATTERIES = "batteries"
+
+# Schema for per-battery text sensors (slaves)
+BATTERY_TEXT_SENSOR_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_OPERATION_STATUS): text_sensor.text_sensor_schema(
+            icon="mdi:battery-heart-variant",
+        ),
+    }
+)
 
 CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
     {
@@ -61,6 +71,10 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
         cv.Optional(CONF_HARDWARE_VERSION): text_sensor.text_sensor_schema(
             icon="mdi:chip",
         ),
+        # Per-battery text sensors for slave batteries (battery_2, battery_3, etc.)
+        cv.Optional(CONF_BATTERIES): cv.Schema({
+            cv.Range(min=2, max=16): BATTERY_TEXT_SENSOR_SCHEMA,
+        }),
     }
 )
 
@@ -119,3 +133,10 @@ async def to_code(config):
     if CONF_HARDWARE_VERSION in config:
         sens = await text_sensor.new_text_sensor(config[CONF_HARDWARE_VERSION])
         cg.add(hub.set_hardware_version_text_sensor(sens))
+
+    # Per-battery text sensors for slave batteries
+    if CONF_BATTERIES in config:
+        for battery_index, battery_config in config[CONF_BATTERIES].items():
+            if CONF_OPERATION_STATUS in battery_config:
+                sens = await text_sensor.new_text_sensor(battery_config[CONF_OPERATION_STATUS])
+                cg.add(hub.set_slave_battery_text_sensor(battery_index, "operation_status", sens))

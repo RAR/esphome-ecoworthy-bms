@@ -110,6 +110,9 @@ UNIT_AMPERE_HOURS = "Ah"
 UNIT_MINUTES = "min"
 UNIT_MICROOHM = "μΩ"
 
+# Slave battery sensor configs (subset of main sensors)
+CONF_BATTERIES = "batteries"
+
 CELL_VOLTAGE_SCHEMA = sensor.sensor_schema(
     unit_of_measurement=UNIT_VOLT,
     accuracy_decimals=3,
@@ -122,6 +125,54 @@ TEMPERATURE_SCHEMA = sensor.sensor_schema(
     accuracy_decimals=1,
     device_class=DEVICE_CLASS_TEMPERATURE,
     state_class=STATE_CLASS_MEASUREMENT,
+)
+
+# Schema for per-battery sensors (slaves only expose key metrics)
+BATTERY_SENSOR_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_TOTAL_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_CURRENT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_POWER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_WATT,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_POWER,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_STATE_OF_CHARGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_PERCENT,
+            accuracy_decimals=2,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:battery-70",
+        ),
+        cv.Optional(CONF_STATE_OF_HEALTH): sensor.sensor_schema(
+            unit_of_measurement=UNIT_PERCENT,
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_REMAINING_CAPACITY): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE_HOURS,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_ENERGY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_POWER_TUBE_TEMPERATURE): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_AMBIENT_TEMPERATURE): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_MIN_CELL_VOLTAGE): CELL_VOLTAGE_SCHEMA,
+        cv.Optional(CONF_MAX_CELL_VOLTAGE): CELL_VOLTAGE_SCHEMA,
+        cv.Optional(CONF_DELTA_CELL_VOLTAGE): CELL_VOLTAGE_SCHEMA,
+        cv.Optional(CONF_MIN_TEMPERATURE): TEMPERATURE_SCHEMA,
+        cv.Optional(CONF_MAX_TEMPERATURE): TEMPERATURE_SCHEMA,
+    }
 )
 
 CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
@@ -350,6 +401,11 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
             state_class=STATE_CLASS_MEASUREMENT,
             icon="mdi:resistor",
         ),
+        # Per-battery sensors for slave batteries (battery_2, battery_3, etc.)
+        # Use battery index as key (2-16)
+        cv.Optional(CONF_BATTERIES): cv.Schema({
+            cv.Range(min=2, max=16): BATTERY_SENSOR_SCHEMA,
+        }),
     }
 )
 
@@ -565,3 +621,46 @@ async def to_code(config):
     if CONF_SHUNT_RESISTANCE in config:
         sens = await sensor.new_sensor(config[CONF_SHUNT_RESISTANCE])
         cg.add(hub.set_shunt_resistance_sensor(sens))
+
+    # Per-battery sensors for slave batteries
+    if CONF_BATTERIES in config:
+        for battery_index, battery_config in config[CONF_BATTERIES].items():
+            if CONF_TOTAL_VOLTAGE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_TOTAL_VOLTAGE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "total_voltage", sens))
+            if CONF_CURRENT in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_CURRENT])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "current", sens))
+            if CONF_POWER in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_POWER])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "power", sens))
+            if CONF_STATE_OF_CHARGE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_STATE_OF_CHARGE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "state_of_charge", sens))
+            if CONF_STATE_OF_HEALTH in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_STATE_OF_HEALTH])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "state_of_health", sens))
+            if CONF_REMAINING_CAPACITY in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_REMAINING_CAPACITY])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "remaining_capacity", sens))
+            if CONF_POWER_TUBE_TEMPERATURE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_POWER_TUBE_TEMPERATURE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "power_tube_temperature", sens))
+            if CONF_AMBIENT_TEMPERATURE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_AMBIENT_TEMPERATURE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "ambient_temperature", sens))
+            if CONF_MIN_CELL_VOLTAGE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_MIN_CELL_VOLTAGE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "min_cell_voltage", sens))
+            if CONF_MAX_CELL_VOLTAGE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_MAX_CELL_VOLTAGE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "max_cell_voltage", sens))
+            if CONF_DELTA_CELL_VOLTAGE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_DELTA_CELL_VOLTAGE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "delta_cell_voltage", sens))
+            if CONF_MIN_TEMPERATURE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_MIN_TEMPERATURE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "min_temperature", sens))
+            if CONF_MAX_TEMPERATURE in battery_config:
+                sens = await sensor.new_sensor(battery_config[CONF_MAX_TEMPERATURE])
+                cg.add(hub.set_slave_battery_sensor(battery_index, "max_temperature", sens))
