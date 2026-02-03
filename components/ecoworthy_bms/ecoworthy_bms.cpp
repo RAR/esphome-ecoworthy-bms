@@ -87,28 +87,30 @@ void EcoworthyBms::update() {
     this->current_battery_index_++;
   } else {
     // After polling all batteries, poll config blocks for master
+    // update_counter_ tracks completed poll cycles (increments after each config step)
     switch (this->request_step_) {
       case 0:
-        // Request config block 1 (every 5th update)
+        // Request config block 1 (every 5th cycle = 20 update calls with 4 batteries)
         if ((this->update_counter_ % 5) == 0) {
           this->send(FUNCTION_READ, REG_CONFIG_1C00_START, REG_CONFIG_1C00_END);
         }
         break;
       case 1:
-        // Request config block 2 (every 10th update)
+        // Request config block 2 (every 10th cycle)
         if ((this->update_counter_ % 10) == 0) {
           this->send(FUNCTION_READ, REG_CONFIG_2000_START, REG_CONFIG_2000_END);
         }
         break;
       case 2:
-        // Request product info (once at startup and every 60 updates)
+        // Request product info (at startup and every 60th cycle)
         if (this->update_counter_ == 0 || (this->update_counter_ % 60) == 0) {
           this->send(FUNCTION_READ, REG_PRODUCT_INFO_START, REG_PRODUCT_INFO_END);
         }
         break;
       case 3:
-        // Request protection parameters (every 30th update)
-        if ((this->update_counter_ % 30) == 0) {
+        // Request protection parameters (at startup and every 30th cycle)
+        // Note: First poll happens on 4th update call when step first reaches 3
+        if (this->update_counter_ <= 4 || (this->update_counter_ % 30) == 0) {
           this->send(FUNCTION_READ, REG_PROTECTION_PARAMS_START, REG_PROTECTION_PARAMS_END);
         }
         break;
