@@ -100,12 +100,12 @@ ecoworthy_bms:
   address: 0x01  # Battery address (1-15)
   ecoworthy_modbus_id: modbus0
   update_interval: 10s
-  battery_count: 1  # Number of batteries (1=master only, 2+=master+slaves)
+  battery_count: 1  # Number of batteries (1=primary only, 2+=primary+secondary)
 ```
 
 ### Multi-Battery Configuration
 
-For systems with multiple batteries connected in parallel, you can poll all batteries from the master:
+For systems with multiple batteries connected in parallel, you can poll all batteries from the primary:
 
 ```yaml
 ecoworthy_bms:
@@ -120,7 +120,7 @@ sensor:
     ecoworthy_bms_id: bms0
     total_voltage:
       name: "Battery 1 Voltage"
-    # Slave batteries
+    # Secondary batteries
     batteries:
       2:
         total_voltage:
@@ -147,7 +147,7 @@ binary_sensor:
           name: "Battery 3 Online"
 ```
 
-**Note:** Per the protocol documentation, only Pack Status is available for slave batteries via RS485/RS232. Configuration parameters are only read from the master.
+**Note:** Per the protocol documentation, only Pack Status is available for secondary batteries via RS485/RS232. Configuration parameters are only read from the primary.
 
 ### Full Example
 
@@ -270,11 +270,11 @@ See [esp32-example.yaml](esp32-example.yaml) for a complete configuration with a
 | `pack_uvp_trigger` | V | Pack under-voltage protection trigger threshold |
 | `pack_uvp_release` | V | Pack under-voltage protection release threshold |
 
-### Slave Battery Sensors
+### Secondary Battery Sensors
 
-For multi-battery setups, **all Pack Status data** is available for each slave battery. The following sensors can be configured per slave:
+For multi-battery setups, **all Pack Status data** is available for each secondary battery. The following sensors can be configured per secondary battery:
 
-#### Slave Sensors
+#### Secondary Sensors
 
 | Category | Available Sensors |
 |----------|-------------------|
@@ -285,19 +285,19 @@ For multi-battery setups, **all Pack Status data** is available for each slave b
 | **Limits** | `charge_voltage_limit`, `charge_current_limit`, `discharge_voltage_limit`, `discharge_current_limit` |
 | **Status** | `cell_count`, `temperature_sensor_count`, `fault_bitmask`, `alarm_bitmask`, `mosfet_status_bitmask`, `balancing_bitmask` |
 
-#### Slave Binary Sensors
+#### Secondary Binary Sensors
 
 | Available Binary Sensors |
 |-------------------------|
 | `online_status`, `charging`, `discharging`, `charging_switch`, `discharging_switch`, `balancing` |
 
-#### Slave Text Sensors
+#### Secondary Text Sensors
 
 | Available Text Sensors |
 |-----------------------|
 | `operation_status`, `fault`, `alarm`, `serial_number`, `firmware_version` |
 
-> **Note:** Configuration parameters from 0x1C00, 0x2000, and 0x2810 blocks (e.g., balance settings, manufacturer, BMS model, etc.) are only available for the master battery when using RS485.
+> **Note:** Configuration parameters from 0x1C00, 0x2000, and 0x2810 blocks (e.g., balance settings, manufacturer, BMS model, etc.) are only available for the primary battery when using RS485.
 
 ### Switches (MOS Control)
 

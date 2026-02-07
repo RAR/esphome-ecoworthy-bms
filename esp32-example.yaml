@@ -48,12 +48,12 @@ ecoworthy_modbus:
 
 ecoworthy_bms:
   id: bms0
-  # Battery address (1-15 for individual batteries, 1 is usually master)
+  # Battery address (1-15 for individual batteries, 1 is usually primary)
   address: 0x01
   ecoworthy_modbus_id: modbus0
   update_interval: 10s
-  # Number of batteries in the pack (1 = master only, 2+ = master + slaves)
-  # Slaves are addressed sequentially starting from master address
+  # Number of batteries in the pack (1 = primary only, 2+ = primary + secondary)
+  # Secondary batteries are addressed sequentially starting from master address
   battery_count: 1
 
 binary_sensor:
@@ -71,8 +71,8 @@ binary_sensor:
       name: "${name} discharging switch"
     balancing:
       name: "${name} balancing"
-    # Uncomment below to add slave battery binary sensors (requires battery_count >= 2)
-    # All Pack Status binary sensors are available for slaves
+    # Uncomment below to add secondary battery binary sensors (requires battery_count >= 2)
+    # All Pack Status binary sensors are available for secondary batteries
     # batteries:
     #   2:
     #     online_status:
@@ -238,7 +238,7 @@ sensor:
     configured_dcl:
       name: "${name} configured DCL"
 
-    # Protection threshold sensors (from 0x1800 block - master only)
+    # Protection threshold sensors (from 0x1800 block - primary only)
     # These show the configured OVP/UVP protection thresholds
     cell_ovp_trigger:
       name: "${name} cell OVP trigger"
@@ -283,8 +283,8 @@ sensor:
     discharge_ut_delay:
       name: "${name} discharge UT delay"
 
-    # Uncomment below to add slave battery sensors (requires battery_count >= 2)
-    # All Pack Status sensors are available for slaves (same as master except config blocks)
+    # Uncomment below to add secondary battery sensors (requires battery_count >= 2)
+    # All Pack Status sensors are available for secondary batteries (same as master except config blocks)
     # batteries:
     #   2:
     #     # Basic monitoring
@@ -387,7 +387,7 @@ text_sensor:
       name: "${name} RS485 protocol"
     hardware_version:
       name: "${name} hardware version"
-    # Uncomment below to add slave battery text sensors (requires battery_count >= 2)
+    # Uncomment below to add secondary battery text sensors (requires battery_count >= 2)
     # batteries:
     #   2:
     #     operation_status:

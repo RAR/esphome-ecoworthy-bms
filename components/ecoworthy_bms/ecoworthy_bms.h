@@ -63,8 +63,8 @@ class TripAllButton : public button::Button, public Component {
   EcoworthyBms *parent_;
 };
 
-// Structure to hold per-battery sensors for slave batteries
-struct SlaveBatterySensors {
+// Structure to hold per-battery sensors for secondary batteries
+struct SecondaryBatterySensors {
   // Voltage sensors
   sensor::Sensor *total_voltage{nullptr};
   sensor::Sensor *min_cell_voltage{nullptr};
@@ -137,10 +137,10 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   void set_battery_count(uint8_t count) { battery_count_ = count; }
   uint8_t get_battery_count() const { return battery_count_; }
   
-  // Slave battery sensor setters (battery_index is 0-based, 0=master uses main sensors)
-  void set_slave_battery_sensor(uint8_t battery_index, const std::string &sensor_type, sensor::Sensor *s);
-  void set_slave_battery_binary_sensor(uint8_t battery_index, const std::string &sensor_type, binary_sensor::BinarySensor *bs);
-  void set_slave_battery_text_sensor(uint8_t battery_index, const std::string &sensor_type, text_sensor::TextSensor *ts);
+  // Secondary battery sensor setters (battery_index is 0-based, 0=primary uses main sensors)
+  void set_secondary_battery_sensor(uint8_t battery_index, const std::string &sensor_type, sensor::Sensor *s);
+  void set_secondary_battery_binary_sensor(uint8_t battery_index, const std::string &sensor_type, binary_sensor::BinarySensor *bs);
+  void set_secondary_battery_text_sensor(uint8_t battery_index, const std::string &sensor_type, text_sensor::TextSensor *ts);
   
   // Binary sensors
   void set_online_status_binary_sensor(binary_sensor::BinarySensor *online_status) {
@@ -470,8 +470,8 @@ class EcoworthyBms : public PollingComponent, public ecoworthy_modbus::Ecoworthy
   
   // Multi-battery support
   uint8_t battery_count_{1};
-  uint8_t current_battery_index_{0};  // Which battery we're currently polling (0 = master)
-  SlaveBatterySensors slave_batteries_[MAX_BATTERIES];  // Index 0 unused (master uses main sensors)
+  uint8_t current_battery_index_{0};  // Which battery we're currently polling (0 = primary)
+  SecondaryBatterySensors secondary_batteries_[MAX_BATTERIES];  // Index 0 unused (primary uses main sensors)
 
   // Current MOS states
   bool charge_mos_state_{false};

@@ -41,7 +41,7 @@ This document describes the Modbus-RTU register map for Ecoworthy and JBD UP16S 
 
 ## Individual Pack Status (Function 0x45, 0x0000 - 0x0054)
 
-This command returns non-aggregated (individual) current limits for the battery directly connected to the port. When querying the master battery with function 0x78, the CCL/DCL values in Pack Status are aggregated across all batteries. Function 0x45 returns the master's own non-aggregated limits.
+This command returns non-aggregated (individual) current limits for the battery directly connected to the port. When querying the primary battery with function 0x78, the CCL/DCL values in Pack Status are aggregated across all batteries. Function 0x45 returns the primary's own non-aggregated limits.
 
 **Note:** This command only works for the battery directly connected to the communication port, even on Bluetooth/WiFi UART ports.
 
@@ -56,7 +56,7 @@ This command returns non-aggregated (individual) current limits for the battery 
 | Offset | Size | Description | Unit/Formula |
 |--------|------|-------------|--------------|
 | 0 | 2 | Pack voltage | V = val / 100 |
-| 2 | 2 | Unknown (slave pack voltage) | V = val / 100 |
+| 2 | 2 | Unknown (secondary pack voltage) | V = val / 100 |
 | 4 | 4 | Pack current | A = (val - 300000) / 100 |
 | 8 | 2 | State of charge | % = val / 100 |
 | 10 | 2 | Residual capacity | Ah = val / 100 |
@@ -162,7 +162,7 @@ This command returns non-aggregated (individual) current limits for the battery 
 
 ## Protection Parameters (0x1800 - 0x1900)
 
-The protection parameters block contains voltage, current, and temperature protection thresholds. This block is 208 bytes and is only available from the master battery.
+The protection parameters block contains voltage, current, and temperature protection thresholds. This block is 208 bytes and is only available from the primary battery.
 
 ### Voltage Protection (Offsets 0-47)
 
@@ -275,7 +275,7 @@ Delay formula: `seconds = raw / 1000`
 
 ## Configuration Block 1 (0x1C00 - 0x1CA0)
 
-Configuration and identification data. This block is 136 bytes and is only available from the master battery.
+Configuration and identification data. This block is 136 bytes and is only available from the primary battery.
 
 **Note:** Ecoworthy offsets are shifted by 4 bytes compared to some EG4 documentation.
 
