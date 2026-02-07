@@ -790,7 +790,7 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
         # Per-battery sensors for slave batteries (battery_2, battery_3, etc.)
         # Use battery index as key (2-16)
         cv.Optional(CONF_BATTERIES): cv.Schema({
-            cv.Range(min=2, max=16): BATTERY_SENSOR_SCHEMA,
+            cv.int_range(min=2, max=16): BATTERY_SENSOR_SCHEMA,
         }),
     }
 )

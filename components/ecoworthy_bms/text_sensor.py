@@ -85,7 +85,7 @@ CONFIG_SCHEMA = ECOWORTHY_BMS_COMPONENT_SCHEMA.extend(
         ),
         # Per-battery text sensors for slave batteries (battery_2, battery_3, etc.)
         cv.Optional(CONF_BATTERIES): cv.Schema({
-            cv.Range(min=2, max=16): BATTERY_TEXT_SENSOR_SCHEMA,
+            cv.int_range(min=2, max=16): BATTERY_TEXT_SENSOR_SCHEMA,
         }),
     }
 )
