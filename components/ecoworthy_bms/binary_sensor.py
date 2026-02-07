@@ -98,21 +98,24 @@ async def to_code(config):
     # Per-battery binary sensors for slave batteries
     if CONF_BATTERIES in config:
         for battery_index, battery_config in config[CONF_BATTERIES].items():
+            # YAML key is 1-based (slave_battery_number: 2,3,...) but C++ battery_index
+            # from address offset is 0-based (master=0, slave1=1, slave2=2,...)
+            cpp_index = battery_index - 1
             if CONF_ONLINE_STATUS in battery_config:
                 sens = await binary_sensor.new_binary_sensor(battery_config[CONF_ONLINE_STATUS])
-                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "online_status", sens))
+                cg.add(hub.set_slave_battery_binary_sensor(cpp_index, "online_status", sens))
             if CONF_CHARGING in battery_config:
                 sens = await binary_sensor.new_binary_sensor(battery_config[CONF_CHARGING])
-                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "charging", sens))
+                cg.add(hub.set_slave_battery_binary_sensor(cpp_index, "charging", sens))
             if CONF_DISCHARGING in battery_config:
                 sens = await binary_sensor.new_binary_sensor(battery_config[CONF_DISCHARGING])
-                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "discharging", sens))
+                cg.add(hub.set_slave_battery_binary_sensor(cpp_index, "discharging", sens))
             if CONF_CHARGING_SWITCH in battery_config:
                 sens = await binary_sensor.new_binary_sensor(battery_config[CONF_CHARGING_SWITCH])
-                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "charging_switch", sens))
+                cg.add(hub.set_slave_battery_binary_sensor(cpp_index, "charging_switch", sens))
             if CONF_DISCHARGING_SWITCH in battery_config:
                 sens = await binary_sensor.new_binary_sensor(battery_config[CONF_DISCHARGING_SWITCH])
-                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "discharging_switch", sens))
+                cg.add(hub.set_slave_battery_binary_sensor(cpp_index, "discharging_switch", sens))
             if CONF_BALANCING in battery_config:
                 sens = await binary_sensor.new_binary_sensor(battery_config[CONF_BALANCING])
-                cg.add(hub.set_slave_battery_binary_sensor(battery_index, "balancing", sens))
+                cg.add(hub.set_slave_battery_binary_sensor(cpp_index, "balancing", sens))

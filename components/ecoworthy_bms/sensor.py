@@ -1134,117 +1134,120 @@ async def to_code(config):
     # Per-battery sensors for slave batteries
     if CONF_BATTERIES in config:
         for battery_index, battery_config in config[CONF_BATTERIES].items():
+            # YAML key is 1-based (slave_battery_number: 2,3,...) but C++ battery_index
+            # from address offset is 0-based (master=0, slave1=1, slave2=2,...)
+            cpp_index = battery_index - 1
             # Voltage sensors
             if CONF_TOTAL_VOLTAGE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_TOTAL_VOLTAGE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "total_voltage", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "total_voltage", sens))
             if CONF_MIN_CELL_VOLTAGE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_MIN_CELL_VOLTAGE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "min_cell_voltage", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "min_cell_voltage", sens))
             if CONF_MAX_CELL_VOLTAGE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_MAX_CELL_VOLTAGE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "max_cell_voltage", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "max_cell_voltage", sens))
             if CONF_DELTA_CELL_VOLTAGE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_DELTA_CELL_VOLTAGE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "delta_cell_voltage", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "delta_cell_voltage", sens))
             if CONF_AVERAGE_CELL_VOLTAGE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_AVERAGE_CELL_VOLTAGE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "average_cell_voltage", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "average_cell_voltage", sens))
             if CONF_MIN_VOLTAGE_CELL in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_MIN_VOLTAGE_CELL])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "min_voltage_cell", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "min_voltage_cell", sens))
             if CONF_MAX_VOLTAGE_CELL in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_MAX_VOLTAGE_CELL])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "max_voltage_cell", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "max_voltage_cell", sens))
             # Cell voltages
             for i in range(1, 17):
                 conf_name = f"cell_voltage_{i}"
                 if conf_name in battery_config:
                     sens = await sensor.new_sensor(battery_config[conf_name])
-                    cg.add(hub.set_slave_battery_sensor(battery_index, conf_name, sens))
+                    cg.add(hub.set_slave_battery_sensor(cpp_index, conf_name, sens))
             # Current and power
             if CONF_CURRENT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_CURRENT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "current", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "current", sens))
             if CONF_POWER in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_POWER])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "power", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "power", sens))
             if CONF_CHARGING_POWER in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_CHARGING_POWER])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "charging_power", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "charging_power", sens))
             if CONF_DISCHARGING_POWER in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_DISCHARGING_POWER])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "discharging_power", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "discharging_power", sens))
             # Temperature sensors
             if CONF_POWER_TUBE_TEMPERATURE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_POWER_TUBE_TEMPERATURE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "power_tube_temperature", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "power_tube_temperature", sens))
             if CONF_AMBIENT_TEMPERATURE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_AMBIENT_TEMPERATURE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "ambient_temperature", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "ambient_temperature", sens))
             if CONF_MIN_TEMPERATURE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_MIN_TEMPERATURE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "min_temperature", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "min_temperature", sens))
             if CONF_MAX_TEMPERATURE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_MAX_TEMPERATURE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "max_temperature", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "max_temperature", sens))
             if CONF_AVG_TEMPERATURE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_AVG_TEMPERATURE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "avg_temperature", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "avg_temperature", sens))
             for i in range(1, 5):
                 conf_name = f"temperature_sensor_{i}"
                 if conf_name in battery_config:
                     sens = await sensor.new_sensor(battery_config[conf_name])
-                    cg.add(hub.set_slave_battery_sensor(battery_index, conf_name, sens))
+                    cg.add(hub.set_slave_battery_sensor(cpp_index, conf_name, sens))
             # Capacity
             if CONF_STATE_OF_CHARGE in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_STATE_OF_CHARGE])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "state_of_charge", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "state_of_charge", sens))
             if CONF_STATE_OF_HEALTH in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_STATE_OF_HEALTH])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "state_of_health", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "state_of_health", sens))
             if CONF_REMAINING_CAPACITY in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_REMAINING_CAPACITY])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "remaining_capacity", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "remaining_capacity", sens))
             if CONF_FULL_CAPACITY in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_FULL_CAPACITY])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "full_capacity", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "full_capacity", sens))
             if CONF_RATED_CAPACITY in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_RATED_CAPACITY])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "rated_capacity", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "rated_capacity", sens))
             if CONF_CYCLE_COUNT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_CYCLE_COUNT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "cycle_count", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "cycle_count", sens))
             # Limits
             if CONF_CHARGE_VOLTAGE_LIMIT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_CHARGE_VOLTAGE_LIMIT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "charge_voltage_limit", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "charge_voltage_limit", sens))
             if CONF_CHARGE_CURRENT_LIMIT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_CHARGE_CURRENT_LIMIT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "charge_current_limit", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "charge_current_limit", sens))
             if CONF_DISCHARGE_VOLTAGE_LIMIT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_DISCHARGE_VOLTAGE_LIMIT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "discharge_voltage_limit", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "discharge_voltage_limit", sens))
             if CONF_DISCHARGE_CURRENT_LIMIT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_DISCHARGE_CURRENT_LIMIT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "discharge_current_limit", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "discharge_current_limit", sens))
             # Status
             if CONF_CELL_COUNT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_CELL_COUNT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "cell_count", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "cell_count", sens))
             if CONF_TEMPERATURE_SENSOR_COUNT in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_TEMPERATURE_SENSOR_COUNT])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "temperature_sensor_count", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "temperature_sensor_count", sens))
             if CONF_FAULT_BITMASK in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_FAULT_BITMASK])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "fault_bitmask", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "fault_bitmask", sens))
             if CONF_ALARM_BITMASK in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_ALARM_BITMASK])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "alarm_bitmask", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "alarm_bitmask", sens))
             if CONF_MOSFET_STATUS_BITMASK in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_MOSFET_STATUS_BITMASK])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "mosfet_status_bitmask", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "mosfet_status_bitmask", sens))
             if CONF_BALANCING_BITMASK in battery_config:
                 sens = await sensor.new_sensor(battery_config[CONF_BALANCING_BITMASK])
-                cg.add(hub.set_slave_battery_sensor(battery_index, "balancing_bitmask", sens))
+                cg.add(hub.set_slave_battery_sensor(cpp_index, "balancing_bitmask", sens))
 
