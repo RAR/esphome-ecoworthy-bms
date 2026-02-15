@@ -1162,22 +1162,11 @@ void EcoworthyBms::set_sleep_mode(uint8_t mode) {
 void EcoworthyBms::trip_breaker() {
   // Dry contact control register (0x2904-0x2906)
   // Bitmask: bit 0 = dry contact 1, bit 1 = dry contact 2, bit 2 = ADDR OUT, bit 3 = TRIP
-  // Value 0x0008 = trip the breaker
+  // Value 0x0008 = trip the breaker (trips all attached batteries)
   ESP_LOGW(TAG, "TRIPPING BREAKER - emergency disconnect!");
   
-  // The command uses identifier 0x26 'J' 'B' 'D' (variant) instead of 0x11 'J' 'B' 'D'
   std::vector<uint8_t> data = {0x00, 0x08};  // Trip bit (bit 3) set
   this->send_write(REG_DRY_CONTACT, REG_DRY_CONTACT + 2, data);
-}
-
-void EcoworthyBms::trip_breaker_all() {
-  // Same as trip_breaker but sends to broadcast address 0xFF
-  // This should trip all batteries in the system
-  ESP_LOGW(TAG, "TRIPPING ALL BREAKERS - broadcast emergency disconnect!");
-  
-  std::vector<uint8_t> data = {0x00, 0x08};  // Trip bit (bit 3) set
-  // Use parent_->send_write with explicit broadcast address 0xFF
-  this->parent_->send_write(0xFF, REG_DRY_CONTACT, REG_DRY_CONTACT + 2, data);
 }
 
 // Switch implementations (JK-BMS naming convention)
@@ -1211,12 +1200,6 @@ void DeepSleepButton::press_action() {
 void TripButton::press_action() {
   if (this->parent_ != nullptr) {
     this->parent_->trip_breaker();
-  }
-}
-
-void TripAllButton::press_action() {
-  if (this->parent_ != nullptr) {
-    this->parent_->trip_breaker_all();
   }
 }
 
