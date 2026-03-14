@@ -57,36 +57,33 @@ void EcoworthyBms::dump_config() {
 float EcoworthyBms::get_setup_priority() const { return setup_priority::DATA; }
 
 void EcoworthyBms::update() {
-  // Check for primary timeout
-  if (this->no_response_count_ >= MAX_NO_RESPONSE_COUNT) {
-    this->publish_device_unavailable_();
-    ESP_LOGW(TAG, "No response from BMS (address 0x%02X)", this->address_);
-  }
-  
-  // Check for secondary battery timeouts
-  for (uint8_t i = 1; i < this->battery_count_; i++) {
-    if (this->secondary_batteries_[i].no_response_count >= MAX_NO_RESPONSE_COUNT) {
-      this->publish_device_unavailable_(i);
-    }
-  }
-
-  this->track_online_status_();
-  this->no_response_count_++;
-  
-  // Track secondary battery timeouts
-  for (uint8_t i = 1; i < this->battery_count_; i++) {
-    this->track_online_status_(i);
-    this->secondary_batteries_[i].no_response_count++;
-  }
-
   // For multi-battery: poll each battery in sequence, then config blocks for primary only
   // Pattern: battery_1 status, battery_2 status, ..., battery_n status, [config blocks for primary]
   
   if (this->current_battery_index_ < this->battery_count_) {
+    uint8_t bat_idx = this->current_battery_index_;
+
+    // Only check/increment the no-response counter for the battery we're about to poll.
+    // The previous poll for this battery should have responded by now.
+    if (bat_idx == 0) {
+      if (this->no_response_count_ >= MAX_NO_RESPONSE_COUNT) {
+        this->publish_device_unavailable_();
+        ESP_LOGW(TAG, "No response from BMS (address 0x%02X)", this->address_);
+      }
+      this->track_online_status_();
+      this->no_response_count_++;
+    } else {
+      if (this->secondary_batteries_[bat_idx].no_response_count >= MAX_NO_RESPONSE_COUNT) {
+        this->publish_device_unavailable_(bat_idx);
+      }
+      this->track_online_status_(bat_idx);
+      this->secondary_batteries_[bat_idx].no_response_count++;
+    }
+
     // Request pack status for current battery
-    uint8_t battery_address = this->address_ + this->current_battery_index_;
+    uint8_t battery_address = this->address_ + bat_idx;
     ESP_LOGD(TAG, "Requesting pack status for battery %d (address 0x%02X)", 
-             this->current_battery_index_ + 1, battery_address);
+             bat_idx + 1, battery_address);
     this->parent_->send(battery_address, FUNCTION_READ, REG_PACK_STATUS_START, REG_PACK_STATUS_END);
     this->current_battery_index_++;
   } else {
